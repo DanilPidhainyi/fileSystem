@@ -1,5 +1,8 @@
 import BlockDevice from "blockdevice";
 import {BLOCK_SIZE, NAME_CARRIER_INFORMATION, SIZE_CARRIER_INFORMATION} from "../constants.mjs";
+import {Descriptor} from "./Descriptor.mjs";
+import {createFileForDevice} from "./working_with_a_file.mjs";
+import {catchErrs, printErr, print, infoToBuffersList} from "./helpers.mjs";
 
 
 //new BlockDevice( options )
@@ -17,20 +20,59 @@ import {BLOCK_SIZE, NAME_CARRIER_INFORMATION, SIZE_CARRIER_INFORMATION} from "..
 
 
 export const device = {
-    device: null,
 
     initializationBlockDevice(fd) {
         this.device = new BlockDevice({
             path: NAME_CARRIER_INFORMATION,
             size: SIZE_CARRIER_INFORMATION,
-            fd: fd,
+            //fd: 0,
+            mode: 'a',
             blockSize: BLOCK_SIZE
         })
     },
 
+    open(callback) {
+        this.device.open(catchErrs(callback))
+    },
+
+    readBlocks() {
+        //return this.device.writeBlocks(0, new Buffer(''), () => {})
+    },
+
+    writeInBlocks(blocMap) {
+        /**
+         * @param blocMap Obj {blocNumber: buffer}
+         * */
+        this.open(_ => {
+            Object.keys(blocMap).map(blocNumber => {
+                this.device.writeBlocks(blocNumber, blocMap[blocNumber], printErr)
+            })
+
+        })
+    },
+
+    writeInfoToBlocks(info, blockMap) {
+        // console.log();
+    },
+
+    writeInfoToFreeBlocks (info) {
+        // todo tests blocs
+        this.writeInBlocks(infoToBuffersList(info))
+    },
+
+
+    createDescriptors(fd) {
+        const descriptors = Array(fd).map(_ => new Descriptor())
+    }
 
 }
-
+// const b = infoToBuffer({123: '12e'})
+// console.log(b);
+// console.log(b.toString())
+// createFileForDevice()
+device.initializationBlockDevice(4)
+device.writeInfoToFreeBlocks('awef')
+// device.writeInfoToBlocks([1111, 2, 3], [])
 // device.open( function( error ) {
 //     var from = 0
 //     // And determine how many blocks

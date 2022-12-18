@@ -1,3 +1,3 @@
 export const NAME_CARRIER_INFORMATION = 'CARRIER_INFORMATION.txt'
-export const BLOCK_SIZE = 4 //KiB
+export const BLOCK_SIZE = 8 //KiB
 export const SIZE_CARRIER_INFORMATION = 1024
