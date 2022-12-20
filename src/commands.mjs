@@ -1,4 +1,4 @@
-import {createFileForDevice} from "./FS/blocks/working_with_a_file.mjs";
+import {createFileForDevice} from "./FS/static/working_with_a_file.mjs";
 import {device} from "./FS/blocks/BlockDevice.mjs";
 
 
@@ -8,7 +8,6 @@ export const mkfs = n => {
      * @param n Number кількість дескрипторів файлів
      * */
     createFileForDevice()
-    device.initializationBlockDevice(n)
     return null
 }
 

@@ -1,42 +1,48 @@
-import {ALL_BLOCKS} from "../constants.mjs";
+import {ALL_BLOCKS} from "../static/constants.mjs";
+import BitSet from "bitset";
+import * as R from 'ramda'
 
-export const BitMap = {
+export class BitMap {
 
-    createMap() {
-        return Buffer.alloc(ALL_BLOCKS, 0)
-    },
+    constructor() {
+        this.bs = new BitSet
+        this.bs.setRange(0, ALL_BLOCKS, 0)
+    }
 
-    getBusyBlocks(bitMap) {
+    parseArray(arr) {
+        this.bs.data = arr
+        return this
+    }
+
+    toArray() {
+        return this.bs.data || []
+    }
+
+    getBusyBlocks() {
+        return this.bs.toArray()
+    }
+
+    getFreeBlocks() {
+        return R.clone(this.bs).flip().toArray()
+    }
+
+    setBusy(map) {
         /**
-         * @param bitMap Buffer
+         * @param map Arr
          * */
-        return [...bitMap].map((el, i) => el === 0 ? null : i).filter(el => el !== null)
-    },
+        map.forEach(el => this.bs.set(el, 1))
+        return this
+    }
 
-    getFreeBlocks(bitMap) {
-        /**
-         * @param bitMap Buffer
-         * */
-        return [...bitMap].map((el, i) => el === 0 ? i : null).filter(el => el !== null)
-    },
-
-    setBusy(bitMap, map) {
+    setFree(map) {
         /**
          * @param bitMap Buffer
          * @param map Arr
          * */
-        map.forEach(el => bitMap[el] = 1)
-        return bitMap
-    },
-
-    setFree(bitMap, map) {
-        /**
-         * @param bitMap Buffer
-         * @param map Arr
-         * */
-        map.forEach(el => bitMap[el] = 0)
-        return bitMap
-    },
+        map.forEach(el => this.bs.set(el, 0))
+        return this
+    }
 
 
 }
+

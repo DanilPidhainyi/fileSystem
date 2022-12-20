@@ -1,8 +1,7 @@
 import BlockDevice from "blockdevice";
-import {BLOCK_SIZE, NAME_CARRIER_INFORMATION, SIZE_CARRIER_INFORMATION} from "../constants.mjs";
+import {BLOCK_SIZE, NAME_CARRIER_INFORMATION, SIZE_CARRIER_INFORMATION} from "../static/constants.mjs";
 import {Descriptor} from "./Descriptor.mjs";
-import {createFileForDevice} from "./working_with_a_file.mjs";
-import {catchErrs, printErr, print, infoToBuffersList} from "./helpers.mjs";
+import {catchErrs, printErr, infoToBuffersList} from "../static/helpers.mjs";
 
 
 //new BlockDevice( options )
@@ -39,7 +38,7 @@ export const device = {
         //return this.device.writeBlocks(0, new Buffer(''), () => {})
     },
 
-    writeInBlocks(blocMap) {
+    writeBlocMap(blocMap) {
         /**
          * @param blocMap Obj {blocNumber: buffer}
          * */
@@ -51,13 +50,10 @@ export const device = {
         })
     },
 
-    writeInfoToBlocks(info, blockMap) {
-        // console.log();
-    },
+    writeBuffer(buffer, arrBlocks) {
+        this.open(_ => {
 
-    writeInfoToFreeBlocks (info) {
-        // todo tests blocs
-        this.writeInBlocks(infoToBuffersList(info))
+        })
     },
 
 

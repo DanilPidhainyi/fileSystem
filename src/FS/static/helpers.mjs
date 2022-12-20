@@ -1,4 +1,4 @@
-import {BLOCK_SIZE} from "../constants.mjs";
+import {BLOCK_SIZE} from "./constants.mjs";
 
 export const print = (err, xx) => {
     console.log('err=', err)
@@ -18,10 +18,6 @@ export const printErr = err => {
     }
 }
 
-// export const infoToBuffer = info => {
-//     return Buffer.from(JSON.stringify(info), 'utf-8')
-// }
-
 export const splitByBlocSize = info => {
     const maxChars = Math.floor(BLOCK_SIZE / 2)
     return JSON.stringify(info).match(new RegExp(`[^]{1,${maxChars}}`, 'g'));
@@ -35,4 +31,15 @@ export const infoToBuffersList = info => {
             el.write(stringList[i], 'utf-8')
             return el
         })
+}
+
+export const bufferSizeToBlockSize = buffer => {
+    /**
+     * @param buffer Buffer
+     * */
+    return Math.ceil(buffer.length / BLOCK_SIZE)
+}
+
+export const splitBufferOnBlocks = buffer => {
+    return buffer // todo
 }

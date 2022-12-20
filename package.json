@@ -1,5 +1,7 @@
 {
   "dependencies": {
-    "blockdevice": "^0.7.0"
+    "bitset": "^5.1.1",
+    "blockdevice": "^0.7.0",
+    "ramda": "^0.28.0"
   }
 }
