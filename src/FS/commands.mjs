@@ -1,5 +1,5 @@
-import {createFileForDevice} from "./FS/static/working_with_a_file.mjs";
-import {fS} from "./FS/fS.mjs";
+import {createFileForDevice} from "./static/working_with_a_file.mjs";
+import {fS} from "./fS.mjs";
 
 
 export const mkfs = n => {

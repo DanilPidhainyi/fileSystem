@@ -1,6 +1,6 @@
 import BlockDevice from "blockdevice";
 import {BLOCK_SIZE, NAME_CARRIER_INFORMATION, SIZE_CARRIER_INFORMATION} from "../static/constants.mjs";
-import {Descriptor} from "./Descriptor.mjs";
+import {Descriptor} from "../blocks/Descriptor.mjs";
 import {catchErrs, printErr, infoToBuffersList} from "../static/helpers.mjs";
 
 

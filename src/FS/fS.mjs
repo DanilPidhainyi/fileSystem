@@ -1,12 +1,12 @@
 import {bufferSizeToBlockSize, infoToBuffersList} from "./static/helpers.mjs";
-import {device} from "./blocks/BlockDevice.mjs";
+import {device} from "./device/device.mjs";
 import {BitMap} from "./blocks/BitMap.mjs";
 
 export const fS = {
     bitMap: null,
 
     writeInfoToFreeBlocks (info) {
-        // todo tests blocs
+        // todo examples blocs
         device.writeBlocMap(infoToBuffersList(info))
     },
 

@@ -1,4 +1,4 @@
-import {create, ls, mkfs, stat} from "../commands.mjs";
+import {create, ls, mkfs, stat} from "../FS/commands.mjs";
 
 mkfs(128)
 console.log();
