@@ -18,12 +18,26 @@ export class BitMap {
         return this.bs.data || []
     }
 
+    toBuffer() {
+        return this
+    }
+
+    parseBuffer(buffer) {
+        this.parseArray(buffer)
+        return this
+    }
+
     getBusyBlocks() {
         return this.bs.toArray()
     }
 
     getFreeBlocks() {
         return R.clone(this.bs).flip().toArray()
+    }
+
+    setRange(fromIndex, toIndex, value) {
+        this.bs.setRange(fromIndex, toIndex, value)
+        return this
     }
 
     setBusy(map) {
