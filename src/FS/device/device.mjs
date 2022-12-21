@@ -31,16 +31,16 @@ export const device = {
             Object.keys(blocMap).map(blocNumber => {
                 this.device.writeBlocks(blocNumber, blocMap[blocNumber], printErr)
             })
-
         })
     },
 
-    writeBuffer(buffer, arrBlocks) {
+    writeBufferList(blocArr, freeBlocs) {
         this.open(_ => {
-
+            freeBlocs.map((blocNumber, index )=> {
+                this.device.writeBlocks(blocNumber, blocArr[index], printErr)
+            })
         })
     },
-
 
     createDescriptors(fd) {
         const descriptors = Array(fd).map(_ => new Descriptor())

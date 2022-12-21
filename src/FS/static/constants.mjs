@@ -1,4 +1,5 @@
 export const NAME_CARRIER_INFORMATION = 'CARRIER_INFORMATION.txt'
 export const BLOCK_SIZE = 8 //KiB має бути парне
 export const SIZE_CARRIER_INFORMATION = 1024
+export const NUMBER_OF_DESCRIPTORS = 5
 export const ALL_BLOCKS = SIZE_CARRIER_INFORMATION / BLOCK_SIZE // Integer
