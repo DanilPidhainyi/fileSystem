@@ -1,7 +1,7 @@
 import BlockDevice from "blockdevice";
 import {BLOCK_SIZE, NAME_CARRIER_INFORMATION, SIZE_CARRIER_INFORMATION} from "../static/constants.mjs";
-import {Descriptor} from "../blocks/Descriptor.mjs";
-import {catchErrs, printErr, infoToBuffersList} from "../static/helpers.mjs";
+import {catchErrs, printErr, readBuffer} from "../static/helpers.mjs";
+import fs from "fs";
 
 
 export const device = {
@@ -10,7 +10,8 @@ export const device = {
         this.device = new BlockDevice({
             path: NAME_CARRIER_INFORMATION,
             size: SIZE_CARRIER_INFORMATION,
-            mode: 'a',
+            mode: 'r+',
+            fd: 0,
             blockSize: BLOCK_SIZE
         })
     },
@@ -19,8 +20,10 @@ export const device = {
         this.device.open(catchErrs(callback))
     },
 
-    readBlocks() {
-        //return this.device.writeBlocks(0, new Buffer(''), () => {})
+    readBlocks(arr) {
+        this.open(_ => {
+            arr.map(blocNumber => this.device.readBlocks( blocNumber, blocNumber + 1, readBuffer))
+        })
     },
 
     writeBlocMap(blocMap) {
@@ -42,8 +45,8 @@ export const device = {
         })
     },
 
-    createDescriptors(fd) {
-        const descriptors = Array(fd).map(_ => new Descriptor())
-    }
-
 }
+
+device.initializationBlockDevice()
+device.writeBlocMap({1: Buffer.alloc(BLOCK_SIZE, 1), 2: Buffer.alloc(BLOCK_SIZE, 0)})
+device.readBlocks([1, 2])

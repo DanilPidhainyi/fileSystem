@@ -43,3 +43,8 @@ export const bufferSizeToBlockSize = buffer => {
 export const splitBufferOnBlocks = buffer => {
     return buffer // todo
 }
+
+export const readBuffer = (error, buffer, bytesRead) => {
+    printErr(error)
+    return buffer
+}

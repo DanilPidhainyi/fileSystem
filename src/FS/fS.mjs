@@ -1,17 +1,26 @@
 import {infoToBuffersList} from "./static/helpers.mjs";
 import {device} from "./device/device.mjs";
 import {BitMap} from "./blocks/BitMap.mjs";
-import {NUMBER_OF_DESCRIPTORS} from "./static/constants.mjs";
+import {DIRECTORY, LINK_ROOT_DIRECTORY, NUMBER_OF_DESCRIPTORS} from "./static/constants.mjs";
 import {Descriptor} from "./blocks/Descriptor.mjs";
 
 export const fS = {
-    bitMap: new BitMap(),
+    openDirectoryNow: null,
+    openFileNow: null,
 
     writeInfoToFreeBlocks(info) {
         const bufferList = infoToBuffersList(info)
         const freeBlocks = this.bitMap.getFreeBlocks().slice(0, bufferList.length)
         device.writeBufferList(bufferList, freeBlocks)
-        this.bitMap.setBusy(freeBlocks)
+        return this.bitMap.setBusy(freeBlocks)
+    },
+
+    readObjOnMap(map) {
+        device.readBlocks(map)
+    },
+
+    readObjOnBitMap(map) {
+        this.readObjOnMap(map.toArray())
     },
 
     initializeBitMap() {
@@ -21,9 +30,15 @@ export const fS = {
         device.writeBlocMap(infoToBuffersList(this.bitMap))
     },
 
+    initializeRootDirectory() {
+        this.openDirectoryNow = new Descriptor(DIRECTORY, 0, 1, [])
+        return this.openDirectoryNow
+    },
+
     initializeListDescriptors() {
-        const descriptors = Array(NUMBER_OF_DESCRIPTORS).fill(new Descriptor())
-        this.writeInfoToFreeBlocks(descriptors)
+        this.descriptors = Array(NUMBER_OF_DESCRIPTORS).fill(new Descriptor())
+        this.descriptors[LINK_ROOT_DIRECTORY] = this.initializeRootDirectory()
+        this.descriptorsMap = this.writeInfoToFreeBlocks(this.descriptors)
     },
 
     initializeFS(n) {
@@ -32,4 +47,11 @@ export const fS = {
         this.initializeListDescriptors()
     },
 
+    getFileContent(descriptor) {
+        device.readBlocks(descriptor.map)
+    },
+
+    createDirectory(pathname) {
+        return new Descriptor(DIRECTORY, 0, 0, [])
+    }
 }
