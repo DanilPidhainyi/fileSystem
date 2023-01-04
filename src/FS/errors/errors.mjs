@@ -1,0 +1,1 @@
+export const errorWrongPath = new Error('Ви обрали дорогу нахуй')

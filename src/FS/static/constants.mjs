@@ -6,5 +6,5 @@ export const ALL_BLOCKS = SIZE_CARRIER_INFORMATION / BLOCK_SIZE // Integer
 export const DIRECTORY = 'directory'
 export const REGULAR = 'regular'
 export const SYMLINK = 'symlink'
-export const ROOT_DIRECTORY_NAME = '/'
+export const ROOT_DIRECTORY_NAME = 'root'
 export const LINK_ROOT_DIRECTORY = 0

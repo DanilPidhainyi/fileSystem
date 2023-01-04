@@ -48,3 +48,11 @@ export const readBuffer = (error, buffer, bytesRead) => {
     printErr(error)
     return buffer
 }
+
+export const buffersListToString = buffersList => {
+    return buffersList.map(el => el.toString('utf8')).join('')
+}
+
+export const buffersListToInfo = buffersList => {
+    return JSON.parse(buffersListToString(buffersList))
+}

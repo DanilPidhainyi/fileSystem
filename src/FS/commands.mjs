@@ -9,7 +9,6 @@ export const mkfs = n => {
      * */
     createFileForDevice()
     fS.initializeFS(n)
-    return null
 }
 
 export const stat = pathname => {
@@ -18,7 +17,7 @@ export const stat = pathname => {
      * (дані дескриптору файлу).
      * @param pathname String
      * */
-    return null
+    console.log(fS.getDescriptors())
 }
 
 export const ls = () => {
@@ -27,6 +26,7 @@ export const ls = () => {
      * із зазначенням номерів
      * дескрипторів файлів
      * */
+
     return null
 }
 
