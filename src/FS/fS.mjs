@@ -17,12 +17,12 @@ export const fS = {
         return this.bitMap.setBusy(freeBlocks)
     },
 
-    readObjOnMap(map) {
-        device.readBlocks(map)
+    readObjOnMap(arr) {
+        device.readBlocks(arr)
     },
 
     readObjOnBitMap(map) {
-        this.readObjOnMap(map.toArray())
+        return this.readObjOnMap(map.toArray())
     },
 
     initializeBitMap() {
@@ -49,11 +49,6 @@ export const fS = {
         this.initializeListDescriptors()
     },
 
-    getInfoByMap(map) {
-        console.log('map=', map)
-        console.log('device.readBlocks=', device.readBlocks(map))
-        // return buffersListToInfo(device.readBlocks(map))
-    },
 
     getFileContent(descriptor=this.openDirectoryNow) {
         // todo
@@ -63,7 +58,8 @@ export const fS = {
     },
 
     getDescriptors() {
-        this.descriptors = this.getInfoByMap(this.descriptorsMap)
+        this.descriptors = this.readObjOnBitMap(this.descriptorsMap)
+        console.log('this.descriptors=', this.descriptors)
         return this.descriptors
     },
 

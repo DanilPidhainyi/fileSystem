@@ -7,8 +7,8 @@ export const mkfs = n => {
      * ініціалізувати ФС
      * @param n Number кількість дескрипторів файлів
      * */
-    createFileForDevice()
-    fS.initializeFS(n)
+    process.nextTick(createFileForDevice)
+    process.nextTick(_ => fS.initializeFS(n))
 }
 
 export const stat = pathname => {
@@ -17,7 +17,8 @@ export const stat = pathname => {
      * (дані дескриптору файлу).
      * @param pathname String
      * */
-    console.log(fS.getDescriptors())
+    process.nextTick(_ => fS.getDescriptors())
+
 }
 
 export const ls = () => {

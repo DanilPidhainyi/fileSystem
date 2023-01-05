@@ -1,6 +1,7 @@
 import BlockDevice from "blockdevice";
 import {BLOCK_SIZE, NAME_CARRIER_INFORMATION, SIZE_CARRIER_INFORMATION} from "../static/constants.mjs";
 import {catchErrs, printErr, readBuffer} from "../static/helpers.mjs";
+import util from "util";
 
 
 export const device = {
@@ -10,7 +11,6 @@ export const device = {
             path: NAME_CARRIER_INFORMATION,
             size: SIZE_CARRIER_INFORMATION,
             mode: 'r+',
-            fd: 0,
             blockSize: BLOCK_SIZE
         })
     },
@@ -19,16 +19,29 @@ export const device = {
         return this.device.open(catchErrs(callback))
     },
 
-    readBlocks(arr) {
-        // todo
-        this.open(_ => {
-            console.log(arr.map(blocNumber => this.device.readBlocks( blocNumber, blocNumber + 1, readBuffer)))
+    _readBlock(blocNumber) {
+        return new Promise((resolve, reject) => {
+            this.device.readBlocks(blocNumber, blocNumber + 1, (error, buff) => {
+                if (error) return reject(error)
+                resolve(buff)
+            })
         })
-
     },
 
-    readString(arr) {
-        this.open()
+
+    readBlocks(arr) {
+        return this.open(_ => {
+            console.log('start read')
+            let arrBuf = []
+
+            const addToArr = buffer => {
+                arrBuf.push(buffer)
+            }
+            Promise.all(
+                arr.map(blocNumber => this._readBlock(blocNumber).then(addToArr).catch(console.log))
+            ).then(() => console.log('все', arrBuf))
+        })
+
     },
 
     writeBlocMap(blocMap) {
