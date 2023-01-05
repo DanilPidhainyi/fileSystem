@@ -54,5 +54,6 @@ export const buffersListToString = buffersList => {
 }
 
 export const buffersListToInfo = buffersList => {
+    console.log(buffersListToString(buffersList))
     return JSON.parse(buffersListToString(buffersList))
 }

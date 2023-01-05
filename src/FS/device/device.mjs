@@ -11,12 +11,23 @@ export const device = {
             path: NAME_CARRIER_INFORMATION,
             size: SIZE_CARRIER_INFORMATION,
             mode: 'r+',
+            fd: 0,
             blockSize: BLOCK_SIZE
         })
     },
 
     open(callback) {
         return this.device.open(catchErrs(callback))
+    },
+
+    openThen() {
+        // todo don`t work
+        return new Promise((resolve, reject) => {
+            this.device.open((err, fd) => {
+                if (err) return reject(err)
+                resolve(fd)
+            })
+        })
     },
 
     _readBlock(blocNumber) {
@@ -28,20 +39,14 @@ export const device = {
         })
     },
 
-
     readBlocks(arr) {
-        return this.open(_ => {
-            console.log('start read')
-            let arrBuf = []
-
-            const addToArr = buffer => {
-                arrBuf.push(buffer)
-            }
-            Promise.all(
-                arr.map(blocNumber => this._readBlock(blocNumber).then(addToArr).catch(console.log))
-            ).then(() => console.log('все', arrBuf))
+        return new Promise((resolve, reject) => {
+            this.open(_ => {
+                Promise.all(
+                    arr.map(blocNumber => this._readBlock(blocNumber).catch(_ => null))
+                ).then(data => resolve(data)).catch(err => reject(err))
+            })
         })
-
     },
 
     writeBlocMap(blocMap) {

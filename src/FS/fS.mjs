@@ -18,11 +18,11 @@ export const fS = {
     },
 
     readObjOnMap(arr) {
-        device.readBlocks(arr)
+        return device.readBlocks(arr).then(buffersListToInfo).catch(console.log)
     },
 
     readObjOnBitMap(map) {
-        return this.readObjOnMap(map.toArray())
+        return this.readObjOnMap(map.getBusyBlocks()).then(console.log)
     },
 
     initializeBitMap() {
