@@ -24,13 +24,16 @@ export const splitByBlocSize = info => {
 }
 
 export const infoToBuffersList = info => {
-    const stringList = splitByBlocSize(info)
-    return Array(stringList.length)
-        .fill(new Buffer.alloc(BLOCK_SIZE))
-        .map((el, i) => {
-            el.write(stringList[i], 'utf-8')
-            return el
-        })
+    return splitBufferOnBlocks(
+        Buffer.from(JSON.stringify(info,))
+    )
+    // const stringList = splitByBlocSize(JSON.stringify(info))
+    // return Array(stringList.length)
+    //     .fill(new Buffer.alloc(BLOCK_SIZE))
+    //     .map((el, i) => {
+    //         el.write(stringList[i], 'utf-8')
+    //         return el
+    //     })
 }
 
 export const bufferSizeToBlockSize = buffer => {
@@ -41,7 +44,14 @@ export const bufferSizeToBlockSize = buffer => {
 }
 
 export const splitBufferOnBlocks = buffer => {
-    return buffer // todo
+    return Array(bufferSizeToBlockSize(buffer)).fill(0).map((_, i) => {
+        let buff = buffer.slice(i * BLOCK_SIZE, (i + 1) * BLOCK_SIZE)
+        if (buff.length !== BLOCK_SIZE) {
+            const helpBuff = Buffer.alloc(BLOCK_SIZE - buff.length)
+            buff = Buffer.concat([buff, helpBuff])
+        }
+        return buff
+    })
 }
 
 export const readBuffer = (error, buffer, bytesRead) => {
@@ -49,11 +59,10 @@ export const readBuffer = (error, buffer, bytesRead) => {
     return buffer
 }
 
-export const buffersListToString = buffersList => {
-    return buffersList.map(el => el.toString('utf8')).join('')
-}
+// export const buffersListToString = buffersList => {
+//     return
+// }
 
 export const buffersListToInfo = buffersList => {
-    console.log(buffersListToString(buffersList))
-    return JSON.parse(buffersListToString(buffersList))
+    return Buffer.concat(buffersList).toJSON()
 }

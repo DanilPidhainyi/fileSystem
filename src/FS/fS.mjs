@@ -22,7 +22,7 @@ export const fS = {
     },
 
     readObjOnBitMap(map) {
-        return this.readObjOnMap(map.getBusyBlocks()).then(console.log)
+        return this.readObjOnMap(map.getBusyBlocks())
     },
 
     initializeBitMap() {
@@ -60,6 +60,7 @@ export const fS = {
     getDescriptors() {
         this.descriptors = this.readObjOnBitMap(this.descriptorsMap)
         console.log('this.descriptors=', this.descriptors)
+        this.descriptors.then(console.log)
         return this.descriptors
     },
 
