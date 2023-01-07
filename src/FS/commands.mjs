@@ -1,5 +1,7 @@
 import {clearFile, createFileForDevice} from "./static/working_with_a_file.mjs";
 import {fS} from "./fS.mjs";
+import {isWrongPathname} from "./errors/tests.mjs";
+import {print, toPath} from "./static/helpers.mjs";
 
 
 export const mkfs = n => {
@@ -7,6 +9,7 @@ export const mkfs = n => {
      * ініціалізувати ФС
      * @param n Number кількість дескрипторів файлів
      * */
+    console.log('mkfs')
     createFileForDevice()
     clearFile()
     return fS.initializeFS(n) || null
@@ -18,9 +21,8 @@ export const stat = pathname => {
      * (дані дескриптору файлу).
      * @param pathname String
      * */
-    return fS.testREADWR() || null
-    //process.nextTick(_ => fS.getDescriptors())
-
+    console.log(`stat(${pathname})`)
+    return print(isWrongPathname(pathname) || fS.stat(toPath(pathname)))
 }
 
 export const ls = () => {
@@ -111,6 +113,8 @@ export const mkdir = pathname => {
      * створити нову директорію та створити жорстке посилання на неї,
      * вказане в pathname.
      * */
+    console.log(`mkdir(${pathname})`)
+    return print(isWrongPathname(pathname) || fS.mkdir(pathname))
 }
 
 export const rmdir = pathname => {

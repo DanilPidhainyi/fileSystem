@@ -1,9 +1,15 @@
-import {buffersListToInfo, infoToBuffersList, log, synchronousCall} from "./static/helpers.mjs";
+import {buffersListToInfo, infoToBuffersList, log, synchronousCall, toPath} from "./static/helpers.mjs";
 import {device} from "./device/device.mjs";
 import {BitMap} from "./blocks/BitMap.mjs";
-import {DIRECTORY, LINK_ROOT_DIRECTORY, NUMBER_OF_DESCRIPTORS, ROOT_DIRECTORY_NAME} from "./static/constants.mjs";
+import {
+    BLOCK_SIZE,
+    DIRECTORY,
+    LINK_ROOT_DIRECTORY,
+    NUMBER_OF_DESCRIPTORS,
+    ROOT_DIRECTORY_NAME
+} from "./static/constants.mjs";
 import {Descriptor} from "./blocks/Descriptor.mjs";
-import {errorWrongPath} from "./errors/errors.mjs";
+import {errorWrongParameters, errorWrongPath, errorWrongPathname} from "./errors/errors.mjs";
 import * as R from "ramda";
 
 export const fS = {
@@ -14,28 +20,47 @@ export const fS = {
         const bufferList = infoToBuffersList(info)
         const freeBlocks = this.bitMap.getFreeBlocks().slice(0, bufferList.length)
         return device.writeBufferList(bufferList, freeBlocks)
-            .then(_ => this.bitMap.setBusy(freeBlocks))
-            .catch(_ => null)
+            .then(() => this.bitMap.setBusy(freeBlocks))
+            .then(() => freeBlocks)
+            .catch(() => null)
+    },
+
+    writeInfoToOldBitMap(info, oldMap) {
+        const bufferList = infoToBuffersList(info)
+        const freeBlocks = oldMap.getBusyBlocks().concat(this.bitMap.getFreeBlocks()).slice(0, bufferList.length)
+        return device.writeBufferList(bufferList, freeBlocks)
+            .then(() => this.bitMap.setBusy(freeBlocks))
+            .then(() => freeBlocks)
+            .catch(() => null)
+    },
+
+    writeThisBitMap() {
+        return device.writeBlocMap(infoToBuffersList(this.bitMap.toArray()))
+    },
+
+    writeDescriptors(descriptors=this.descriptors) {
+        return this.writeInfoToFreeBlocks(descriptors).then(data => {
+            // todo
+            this.descriptorsMap = data
+        })
     },
 
     initializeBitMap() {
         this.bitMap = new BitMap()
         const needBlocks = infoToBuffersList(this.bitMap.toArray()).length
         this.bitMap.setRange(0, needBlocks, 1)
-        return device.writeBlocMap(infoToBuffersList(this.bitMap.toArray()))
+        return this.writeThisBitMap()
     },
 
     initializeRootDirectory() {
-        this.openDirectoryNow = new Descriptor(DIRECTORY, 0, 1, [])
-        return this.openDirectoryNow
+        this.openDirectoryNow = LINK_ROOT_DIRECTORY
+        return new Descriptor(DIRECTORY, 0, 1)
     },
 
     initializeListDescriptors() {
         this.descriptors = Array(NUMBER_OF_DESCRIPTORS).fill(new Descriptor())
         this.descriptors[LINK_ROOT_DIRECTORY] = this.initializeRootDirectory()
-        return this.writeInfoToFreeBlocks(this.descriptors).then(data => {
-            this.descriptorsMap = data
-        })
+        return this.writeDescriptors()
     },
 
     initializeFS(n) {
@@ -54,52 +79,94 @@ export const fS = {
         return this.readObjOnMap(map.getBusyBlocks())
     },
 
-
-    getFileContent(descriptor=this.openDirectoryNow) {
-        // todo
-        console.log(this.openDirectoryNow)
-        console.log(buffersListToInfo(device.readBlocks(descriptor.map)))
-
+    updateDescriptor(index, newValue) {
+        this.descriptors[index] = newValue
+        return this.writeDescriptors()
     },
 
-    getDescriptors() {
-        console.log('this.descriptorsMap=', this.descriptorsMap)
-        this.descriptors = this.readObjOnBitMap(this.descriptorsMap)
-        console.log('this.descriptors=', this.descriptors)
-        this.descriptors.then(console.log)
-        return this.descriptors
+    getDescriptor(index) {
+      return this.descriptors[index]
     },
 
-    createDirectory(pathname) {
-        return new Descriptor(DIRECTORY, 0, 0, [])
+    addDescriptor(descriptor) {
+        const free = Object.keys(this.descriptors).find(el => !this.descriptors[el].fileType)
+        // todo err not free
+        this.descriptors[free] = descriptor
+        return free
     },
 
+    async createFile(path, newDescriptor, content) {
+        const fatherDescriptorIndex = await this._stat(path.slice(0, -1))
+
+        if (content !== null && content !== undefined) {
+            await this.writeInfoToFreeBlocks(content).then(writeBl => {
+                newDescriptor.map = new BitMap().setBusy(writeBl)
+                newDescriptor.fileSize = writeBl * BLOCK_SIZE
+            })
+        }
+        const indexNewDesc = this.addDescriptor(newDescriptor)
+        // console.log('newDescriptor=', newDescriptor)
+        // console.log('indexNewDesc=', indexNewDesc)
+
+        const fatherDescriptor = this.getDescriptor(fatherDescriptorIndex)
+        let fatherContent = {}
+        if (fatherDescriptor.fileSize) {
+            await this.readObjOnBitMap(fatherDescriptor.map).then(data => {
+                fatherContent = data
+            })
+        }
+        // todo test однакові імена
+        fatherContent[path.at(-1)] = indexNewDesc
+
+        await this.writeInfoToOldBitMap(fatherContent, fatherDescriptor.map).then(writeBl => {
+            fatherDescriptor.map = new BitMap().setBusy(writeBl)
+            fatherDescriptor.fileSize = writeBl * BLOCK_SIZE
+        })
+        // console.log('fatherDescriptor=', fatherDescriptor)
+        // console.log('fatherDescriptorIndex=', fatherDescriptorIndex)
+        await this.updateDescriptor(fatherDescriptorIndex, fatherContent)
+    },
 
     searchFileDescriptor(startDescriptor, path) {
         if (R.empty(path)) {
-            return startDescriptor
+            return Promise.resolve(startDescriptor)
         }
         // todo get directory content
         return this.searchFileDescriptor(R.head(path), R.tail(path))
     },
 
-    stat(pathname) {
-        // todo
-        const path = pathname.split('/') || []
+    _stat(path) {
         if (path[0] === '.') {
             return this.searchFileDescriptor(this.openDirectoryNow, R.tail(path))
         }
         else if (path[0] === ROOT_DIRECTORY_NAME) {
             // todo get descriptor
-            return  this.searchFileDescriptor(this.descriptors[LINK_ROOT_DIRECTORY], R.tail(path))
+            return  this.searchFileDescriptor(LINK_ROOT_DIRECTORY, R.tail(path))
         }
         else {
-            throw errorWrongPath
+            return 0
         }
     },
 
-    testREADWR() {
-        this.readObjOnBitMap(this.bitMap).then(log)
-        //this.writeInfoToFreeBlocks([1, 2])
+    stat(path) {
+        if (path) {
+            return this._stat(path)
+                .then(i => this.getDescriptor(i))
+                // .then(descriptor => {
+                //     console.log('descriptor=', descriptor)
+                //     descriptor.map = descriptor.map.toArray()
+                //     return descriptor
+                // })
+        }
+        else {
+            return Promise.reject(errorWrongPath)
+        }
+    },
+
+    mkdir(pathname) {
+        const path = toPath(pathname)
+        const descriptor = new Descriptor(DIRECTORY, 0, 1,)
+        return this.createFile(path, descriptor, null) || null
     }
+
 }

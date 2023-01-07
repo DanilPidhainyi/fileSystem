@@ -1,10 +1,13 @@
-import {create, ls, mkfs, stat} from "../FS/commands.mjs";
+import {create, ls, mkdir, mkfs, stat} from "../FS/commands.mjs";
 import {synchronousCall} from "../FS/static/helpers.mjs";
 
 const _ = synchronousCall([
 
     mkfs(128),
-    stat('')
+    stat('./'),
+    mkdir('./newDir'),
+    stat('.'),
+    stat('./newDir'),
 ]);
 
 // create('new file')
