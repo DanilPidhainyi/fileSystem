@@ -1,4 +1,4 @@
-import {buffersListToInfo, infoToBuffersList, log, synchronousCall, toPath} from "./static/helpers.mjs";
+import {buffersListToInfo, infoToBuffersList, log, printErr, synchronousCall, toPath} from "./static/helpers.mjs";
 import {device} from "./device/device.mjs";
 import {BitMap} from "./blocks/BitMap.mjs";
 import {
@@ -9,7 +9,7 @@ import {
     ROOT_DIRECTORY_NAME
 } from "./static/constants.mjs";
 import {Descriptor} from "./blocks/Descriptor.mjs";
-import {errorWrongParameters, errorWrongPath, errorWrongPathname} from "./errors/errors.mjs";
+import {errorNotFound, errorWrongParameters, errorWrongPath, errorWrongPathname} from "./errors/errors.mjs";
 import * as R from "ramda";
 
 export const fS = {
@@ -97,8 +97,6 @@ export const fS = {
         return free
     },
 
-
-
     async createFile(path, newDescriptor, content) {
         const fatherDescriptorIndex = await this._stat(path.slice(0, -1))
         await newDescriptor.writeContent(content)
@@ -107,6 +105,9 @@ export const fS = {
         // console.log('indexNewDesc=', indexNewDesc)
 
         const fatherDescriptor = this.getDescriptor(fatherDescriptorIndex)
+        if (!fatherDescriptor) {
+            return errorWrongPath
+        }
         let fatherContent = await fatherDescriptor.readContent()
         // todo test однакові імена
         fatherContent[path.at(-1)] = indexNewDesc
@@ -115,6 +116,7 @@ export const fS = {
         // console.log('fatherDescriptor=', fatherDescriptor)
         // console.log('fatherDescriptorIndex=', fatherDescriptorIndex)
         await this.updateDescriptor(fatherDescriptorIndex, fatherDescriptor)
+        return null
     },
 
     async searchFileDescriptor(startDescriptorIndex, path) {
@@ -143,7 +145,9 @@ export const fS = {
 
     stat(path) {
         if (path) {
-            return this._stat(path).then(i => this.getDescriptor(i))
+            return this._stat(path)
+                .then(i => this.getDescriptor(i))
+                .then(i => i || errorNotFound)
         }
         return Promise.reject(errorWrongPath)
     },
@@ -151,7 +155,7 @@ export const fS = {
     mkdir(pathname) {
         const path = toPath(pathname)
         const descriptor = new Descriptor(DIRECTORY, 0, 1,)
-        return this.createFile(path, descriptor, null) || null
+        return this.createFile(path, descriptor, null).then(printErr)
     }
 
 }

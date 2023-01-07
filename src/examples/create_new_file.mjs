@@ -7,8 +7,9 @@ import {synchronousCall} from "../FS/static/helpers.mjs";
         await mkfs(128)
         await stat('./')
         await mkdir('./newDir')
+        await mkdir('./newDir/newDrr/newDrw')
         await stat('.')
-        await stat('./newDir')
+        await stat('./newDir/newDrr/newDrw')
     }
 )()
 
