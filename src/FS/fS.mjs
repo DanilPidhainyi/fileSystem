@@ -85,8 +85,10 @@ export const fS = {
     },
 
     getDescriptor(index) {
-      return this.descriptors[index]
+        return this.descriptors[index]
     },
+
+
 
     addDescriptor(descriptor) {
         const free = Object.keys(this.descriptors).find(el => !this.descriptors[el].fileType)
@@ -95,33 +97,21 @@ export const fS = {
         return free
     },
 
+
+
     async createFile(path, newDescriptor, content) {
         const fatherDescriptorIndex = await this._stat(path.slice(0, -1))
-
-        if (content !== null && content !== undefined) {
-            await this.writeInfoToFreeBlocks(content).then(writeBl => {
-                newDescriptor.map = new BitMap().setBusy(writeBl)
-                newDescriptor.fileSize = writeBl * BLOCK_SIZE
-            })
-        }
+        await newDescriptor.writeContent(content)
         const indexNewDesc = this.addDescriptor(newDescriptor)
         // console.log('newDescriptor=', newDescriptor)
         // console.log('indexNewDesc=', indexNewDesc)
 
         const fatherDescriptor = this.getDescriptor(fatherDescriptorIndex)
-        let fatherContent = {}
-        if (fatherDescriptor.fileSize) {
-            await this.readObjOnBitMap(fatherDescriptor.map).then(data => {
-                fatherContent = data
-            })
-        }
+        let fatherContent = await fatherDescriptor.readContent()
         // todo test однакові імена
         fatherContent[path.at(-1)] = indexNewDesc
 
-        await this.writeInfoToOldBitMap(fatherContent, fatherDescriptor.map).then(writeBl => {
-            fatherDescriptor.map = new BitMap().setBusy(writeBl)
-            fatherDescriptor.fileSize = writeBl * BLOCK_SIZE
-        })
+        await fatherDescriptor.writeContent(fatherContent)
         // console.log('fatherDescriptor=', fatherDescriptor)
         // console.log('fatherDescriptorIndex=', fatherDescriptorIndex)
         await this.updateDescriptor(fatherDescriptorIndex, fatherDescriptor)
@@ -131,6 +121,7 @@ export const fS = {
         if (R.empty(path)) {
             return Promise.resolve(startDescriptor)
         }
+
         // todo get directory content
         return this.searchFileDescriptor(R.head(path), R.tail(path))
     },
@@ -150,8 +141,7 @@ export const fS = {
 
     stat(path) {
         if (path) {
-            return this._stat(path)
-                .then(i => this.getDescriptor(i))
+            return this._stat(path).then(i => this.getDescriptor(i))
                 // .then(descriptor => {
                 //     console.log('descriptor=', descriptor)
                 //     descriptor.map = descriptor.map.toArray()
