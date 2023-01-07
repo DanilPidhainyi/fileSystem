@@ -4,14 +4,22 @@ export const synchronousCall = async arr => {
     /**
      * required for a synchronous call Promises
      * */
+    const res = []
+
     for (const item of arr) {
-        await item
+        res.push(await item)
     }
+    return res
 }
 
 export const print = (err, xx) => {
     console.log('err=', err)
     console.log('xx=', xx)
+}
+
+export const log = ell => {
+    console.log('log=', ell)
+    return ell
 }
 
 export const catchErrs = callback => err => {
@@ -52,14 +60,17 @@ export const bufferSizeToBlockSize = buffer => {
     return Math.ceil(buffer.length / BLOCK_SIZE)
 }
 
+export const correctSizeBuffer = buffer => {
+    const needBlocs = bufferSizeToBlockSize(buffer)
+    const correctBuffer = Buffer.alloc(needBlocs * BLOCK_SIZE)
+    correctBuffer.set(buffer)
+    return correctBuffer
+}
+
 export const splitBufferOnBlocks = buffer => {
-    return Array(bufferSizeToBlockSize(buffer)).fill(0).map((_, i) => {
-        let buff = buffer.slice(i * BLOCK_SIZE, (i + 1) * BLOCK_SIZE)
-        if (buff.length !== BLOCK_SIZE) {
-            const helpBuff = Buffer.alloc(BLOCK_SIZE - buff.length)
-            buff = Buffer.concat([buff, helpBuff])
-        }
-        return buff
+    const correctBuf = correctSizeBuffer(buffer)
+    return Array(bufferSizeToBlockSize(correctBuf)).fill(0).map((_, i) => {
+        return correctBuf.slice(i * BLOCK_SIZE, (i + 1) * BLOCK_SIZE)
     })
 }
 
@@ -73,7 +84,6 @@ export const readBuffer = (error, buffer, bytesRead) => {
 // }
 
 export const buffersListToInfo = buffersList => {
-    // return Buffer.concat(buffersList).toJSON()
-    console.log(Buffer.concat(buffersList).toString())
-    return JSON.parse(Buffer.concat(buffersList).toString());
+    const data = Buffer.concat(buffersList).toString().replaceAll('\x00','')
+    return JSON.parse(data);
 }

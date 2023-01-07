@@ -1,6 +1,6 @@
 import BlockDevice from "blockdevice";
 import {BLOCK_SIZE, NAME_CARRIER_INFORMATION, SIZE_CARRIER_INFORMATION} from "../static/constants.mjs";
-import {catchErrs, printErr, readBuffer, synchronousCall} from "../static/helpers.mjs";
+import {catchErrs, log, print, printErr, readBuffer, synchronousCall} from "../static/helpers.mjs";
 
 
 export const device = {
@@ -41,7 +41,7 @@ export const device = {
         return this.openThen(() =>
             synchronousCall(
                 arr.map(blocNumber => this._readBlock(blocNumber).catch(_ => null))
-            ).catch(_ => null)
+            ).then(log).catch(_ => null)
         )
 
         // return new Promise((resolve, reject) => {

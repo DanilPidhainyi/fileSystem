@@ -1,4 +1,4 @@
-import {buffersListToInfo, infoToBuffersList, synchronousCall} from "./static/helpers.mjs";
+import {buffersListToInfo, infoToBuffersList, log, synchronousCall} from "./static/helpers.mjs";
 import {device} from "./device/device.mjs";
 import {BitMap} from "./blocks/BitMap.mjs";
 import {DIRECTORY, LINK_ROOT_DIRECTORY, NUMBER_OF_DESCRIPTORS, ROOT_DIRECTORY_NAME} from "./static/constants.mjs";
@@ -51,7 +51,6 @@ export const fS = {
     },
 
     readObjOnBitMap(map) {
-        console.log('map.getBusyBlocks()=', map.getBusyBlocks())
         return this.readObjOnMap(map.getBusyBlocks())
     },
 
@@ -100,6 +99,7 @@ export const fS = {
     },
 
     testREADWR() {
-        this.writeInfoToFreeBlocks([1, 2])
+        this.readObjOnBitMap(this.bitMap).then(log)
+        //this.writeInfoToFreeBlocks([1, 2])
     }
 }

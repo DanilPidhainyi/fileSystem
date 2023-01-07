@@ -18,7 +18,7 @@ export const stat = pathname => {
      * (дані дескриптору файлу).
      * @param pathname String
      * */
-    fS.testREADWR()
+    return fS.testREADWR() || null
     //process.nextTick(_ => fS.getDescriptors())
 
 }

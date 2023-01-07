@@ -4,7 +4,7 @@ import {synchronousCall} from "../FS/static/helpers.mjs";
 const _ = synchronousCall([
 
     mkfs(128),
-
+    stat('')
 ]);
 
 // create('new file')
