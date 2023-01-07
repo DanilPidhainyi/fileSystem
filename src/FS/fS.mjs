@@ -124,7 +124,7 @@ export const fS = {
         })
         // console.log('fatherDescriptor=', fatherDescriptor)
         // console.log('fatherDescriptorIndex=', fatherDescriptorIndex)
-        await this.updateDescriptor(fatherDescriptorIndex, fatherContent)
+        await this.updateDescriptor(fatherDescriptorIndex, fatherDescriptor)
     },
 
     searchFileDescriptor(startDescriptor, path) {

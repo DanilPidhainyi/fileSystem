@@ -34,6 +34,10 @@ export const printErr = err => {
     }
 }
 
+export const logErr = err => {
+    console.log('error=', err)
+}
+
 export const splitByBlocSize = info => {
     const maxChars = Math.floor(BLOCK_SIZE / 2)
     return JSON.stringify(info).match(new RegExp(`[^]{1,${maxChars}}`, 'g'));

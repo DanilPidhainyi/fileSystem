@@ -21,7 +21,7 @@ export const stat = pathname => {
      * (дані дескриптору файлу).
      * @param pathname String
      * */
-    console.log(`stat(${pathname})`)
+    console.log(`stat(${pathname})---------------------------------------`)
     return print(isWrongPathname(pathname) || fS.stat(toPath(pathname)))
 }
 
@@ -113,8 +113,8 @@ export const mkdir = pathname => {
      * створити нову директорію та створити жорстке посилання на неї,
      * вказане в pathname.
      * */
-    console.log(`mkdir(${pathname})`)
-    return print(isWrongPathname(pathname) || fS.mkdir(pathname))
+    console.log(`mkdir(${pathname})---------------------------------------`)
+    return isWrongPathname(pathname) || fS.mkdir(pathname)
 }
 
 export const rmdir = pathname => {

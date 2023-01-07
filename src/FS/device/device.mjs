@@ -1,6 +1,6 @@
 import BlockDevice from "blockdevice";
 import {BLOCK_SIZE, NAME_CARRIER_INFORMATION, SIZE_CARRIER_INFORMATION} from "../static/constants.mjs";
-import {catchErrs, log, print, printErr, readBuffer, synchronousCall} from "../static/helpers.mjs";
+import {catchErrs, log, logErr, print, printErr, readBuffer, synchronousCall} from "../static/helpers.mjs";
 
 
 export const device = {
@@ -37,12 +37,24 @@ export const device = {
         })
     },
 
+    _writeBlocks(fromLBA, buffer) {
+        return new Promise((resolve, reject) => {
+            this.device.writeBlocks(fromLBA, buffer, (error, item) => {
+                if (error) return reject(error)
+                resolve(item)
+            })
+        })
+    },
+
     readBlocks(arr) {
-        return this.openThen(() =>
-            synchronousCall(
-                arr.map(blocNumber => this._readBlock(blocNumber).catch(_ => null))
-            ).then(log).catch(_ => null)
-        )
+        return this.openThen(async () => {
+            let res = []
+            for (const blocNumber of arr) {
+                res.push(await this._readBlock(blocNumber).catch(_ => null))
+            }
+            return res
+        })
+
 
         // return new Promise((resolve, reject) => {
         //     this.open(_ => {
@@ -68,22 +80,19 @@ export const device = {
         /**
          * @param blocMap Obj {blocNumber: buffer}
          * */
-        return this.openThen(() =>
-            synchronousCall(
-                Object.keys(blocMap).map(blocNumber => {
-                    this.device.writeBlocks(blocNumber, blocMap[blocNumber], printErr)
-                })
-            ).catch(_ => null)
-        )
+        return this.openThen(async () => {
+            for (const blocNumber in blocMap) {
+                await this._writeBlocks(blocNumber, blocMap[blocNumber]).catch(logErr)
+            }
+        })
     },
 
     writeBufferList(blocArr, freeBlocs) {
-        return this.openThen(() =>
-            synchronousCall(
-                freeBlocs.map((blocNumber, index )=> {
-                    this.device.writeBlocks(blocNumber, blocArr[index], printErr)
-                })
-            )).catch(_ => null)
+        return this.openThen(async () => {
+            for (let i = 0; i < freeBlocs.length; i++) {
+                await this._writeBlocks(freeBlocs[i], blocArr[i]).catch(logErr)
+            }
+        })
     },
 
 }
