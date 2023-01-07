@@ -1,4 +1,4 @@
-import {buffersListToInfo, infoToBuffersList} from "./static/helpers.mjs";
+import {buffersListToInfo, infoToBuffersList, synchronousCall} from "./static/helpers.mjs";
 import {device} from "./device/device.mjs";
 import {BitMap} from "./blocks/BitMap.mjs";
 import {DIRECTORY, LINK_ROOT_DIRECTORY, NUMBER_OF_DESCRIPTORS, ROOT_DIRECTORY_NAME} from "./static/constants.mjs";
@@ -13,23 +13,16 @@ export const fS = {
     writeInfoToFreeBlocks(info) {
         const bufferList = infoToBuffersList(info)
         const freeBlocks = this.bitMap.getFreeBlocks().slice(0, bufferList.length)
-        device.writeBufferList(bufferList, freeBlocks)
-        return this.bitMap.setBusy(freeBlocks)
-    },
-
-    readObjOnMap(arr) {
-        return device.readBlocks(arr).then(buffersListToInfo).catch(console.log)
-    },
-
-    readObjOnBitMap(map) {
-        return this.readObjOnMap(map.getBusyBlocks())
+        return device.writeBufferList(bufferList, freeBlocks)
+            .then(_ => this.bitMap.setBusy(freeBlocks))
+            .catch(_ => null)
     },
 
     initializeBitMap() {
         this.bitMap = new BitMap()
-        const needBlocks = infoToBuffersList(this.bitMap).length
+        const needBlocks = infoToBuffersList(this.bitMap.toArray()).length
         this.bitMap.setRange(0, needBlocks, 1)
-        device.writeBlocMap(infoToBuffersList(this.bitMap))
+        return device.writeBlocMap(infoToBuffersList(this.bitMap.toArray()))
     },
 
     initializeRootDirectory() {
@@ -40,13 +33,26 @@ export const fS = {
     initializeListDescriptors() {
         this.descriptors = Array(NUMBER_OF_DESCRIPTORS).fill(new Descriptor())
         this.descriptors[LINK_ROOT_DIRECTORY] = this.initializeRootDirectory()
-        this.descriptorsMap = this.writeInfoToFreeBlocks(this.descriptors)
+        return this.writeInfoToFreeBlocks(this.descriptors).then(data => {
+            this.descriptorsMap = data
+        })
     },
 
     initializeFS(n) {
         device.initializationBlockDevice(n)
-        this.initializeBitMap()
-        this.initializeListDescriptors()
+        return synchronousCall([
+            this.initializeBitMap(),
+            this.initializeListDescriptors(),
+        ])
+    },
+
+    readObjOnMap(arr) {
+        return device.readBlocks(arr).then(buffersListToInfo).catch(console.log)
+    },
+
+    readObjOnBitMap(map) {
+        console.log('map.getBusyBlocks()=', map.getBusyBlocks())
+        return this.readObjOnMap(map.getBusyBlocks())
     },
 
 
@@ -58,6 +64,7 @@ export const fS = {
     },
 
     getDescriptors() {
+        console.log('this.descriptorsMap=', this.descriptorsMap)
         this.descriptors = this.readObjOnBitMap(this.descriptorsMap)
         console.log('this.descriptors=', this.descriptors)
         this.descriptors.then(console.log)
@@ -90,5 +97,9 @@ export const fS = {
         else {
             throw errorWrongPath
         }
+    },
+
+    testREADWR() {
+        this.writeInfoToFreeBlocks([1, 2])
     }
 }

@@ -1,5 +1,14 @@
 import {BLOCK_SIZE} from "./constants.mjs";
 
+export const synchronousCall = async arr => {
+    /**
+     * required for a synchronous call Promises
+     * */
+    for (const item of arr) {
+        await item
+    }
+}
+
 export const print = (err, xx) => {
     console.log('err=', err)
     console.log('xx=', xx)
@@ -25,7 +34,7 @@ export const splitByBlocSize = info => {
 
 export const infoToBuffersList = info => {
     return splitBufferOnBlocks(
-        Buffer.from(JSON.stringify(info,))
+        Buffer.from(JSON.stringify(info))
     )
     // const stringList = splitByBlocSize(JSON.stringify(info))
     // return Array(stringList.length)
@@ -64,5 +73,7 @@ export const readBuffer = (error, buffer, bytesRead) => {
 // }
 
 export const buffersListToInfo = buffersList => {
-    return Buffer.concat(buffersList).toJSON()
+    // return Buffer.concat(buffersList).toJSON()
+    console.log(Buffer.concat(buffersList).toString())
+    return JSON.parse(Buffer.concat(buffersList).toString());
 }

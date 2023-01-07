@@ -1,4 +1,4 @@
-import {createFileForDevice} from "./static/working_with_a_file.mjs";
+import {clearFile, createFileForDevice} from "./static/working_with_a_file.mjs";
 import {fS} from "./fS.mjs";
 
 
@@ -7,8 +7,9 @@ export const mkfs = n => {
      * ініціалізувати ФС
      * @param n Number кількість дескрипторів файлів
      * */
-    process.nextTick(createFileForDevice)
-    process.nextTick(_ => fS.initializeFS(n))
+    createFileForDevice()
+    clearFile()
+    return fS.initializeFS(n) || null
 }
 
 export const stat = pathname => {
@@ -17,7 +18,8 @@ export const stat = pathname => {
      * (дані дескриптору файлу).
      * @param pathname String
      * */
-    process.nextTick(_ => fS.getDescriptors())
+    fS.testREADWR()
+    //process.nextTick(_ => fS.getDescriptors())
 
 }
 

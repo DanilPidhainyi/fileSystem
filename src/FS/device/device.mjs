@@ -1,7 +1,6 @@
 import BlockDevice from "blockdevice";
 import {BLOCK_SIZE, NAME_CARRIER_INFORMATION, SIZE_CARRIER_INFORMATION} from "../static/constants.mjs";
-import {catchErrs, printErr, readBuffer} from "../static/helpers.mjs";
-import util from "util";
+import {catchErrs, printErr, readBuffer, synchronousCall} from "../static/helpers.mjs";
 
 
 export const device = {
@@ -20,12 +19,11 @@ export const device = {
         return this.device.open(catchErrs(callback))
     },
 
-    openThen() {
-        // todo don`t work
+    openThen(callback) {
         return new Promise((resolve, reject) => {
             this.device.open((err, fd) => {
                 if (err) return reject(err)
-                resolve(fd)
+                resolve(callback())
             })
         })
     },
@@ -40,32 +38,52 @@ export const device = {
     },
 
     readBlocks(arr) {
-        return new Promise((resolve, reject) => {
-            this.open(_ => {
-                Promise.all(
-                    arr.map(blocNumber => this._readBlock(blocNumber).catch(_ => null))
-                ).then(data => resolve(data)).catch(err => reject(err))
-            })
-        })
+        return this.openThen(() =>
+            synchronousCall(
+                arr.map(blocNumber => this._readBlock(blocNumber).catch(_ => null))
+            ).catch(_ => null)
+        )
+
+        // return new Promise((resolve, reject) => {
+        //     this.open(_ => {
+        //         Promise.all(
+        //             arr.map(blocNumber => this._readBlock(blocNumber).catch(_ => null))
+        //         ).then(data => resolve(data)).catch(err => reject(err))
+        //     })
+        // })
     },
+
+    // writeBlocMap(blocMap) {
+    //     /**
+    //      * @param blocMap Obj {blocNumber: buffer}
+    //      * */
+    //     this.open(_ => {
+    //         Object.keys(blocMap).map(blocNumber => {
+    //             this.device.writeBlocks(blocNumber, blocMap[blocNumber], printErr)
+    //         })
+    //     })
+    // },
 
     writeBlocMap(blocMap) {
         /**
          * @param blocMap Obj {blocNumber: buffer}
          * */
-        this.open(_ => {
-            Object.keys(blocMap).map(blocNumber => {
-                this.device.writeBlocks(blocNumber, blocMap[blocNumber], printErr)
-            })
-        })
+        return this.openThen(() =>
+            synchronousCall(
+                Object.keys(blocMap).map(blocNumber => {
+                    this.device.writeBlocks(blocNumber, blocMap[blocNumber], printErr)
+                })
+            ).catch(_ => null)
+        )
     },
 
     writeBufferList(blocArr, freeBlocs) {
-        this.open(_ => {
-            freeBlocs.map((blocNumber, index )=> {
-                this.device.writeBlocks(blocNumber, blocArr[index], printErr)
-            })
-        })
+        return this.openThen(() =>
+            synchronousCall(
+                freeBlocs.map((blocNumber, index )=> {
+                    this.device.writeBlocks(blocNumber, blocArr[index], printErr)
+                })
+            )).catch(_ => null)
     },
 
 }
