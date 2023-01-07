@@ -1,10 +1,10 @@
 import {clearFile, createFileForDevice} from "./static/working_with_a_file.mjs";
 import {fS} from "./fS.mjs";
 import {isWrongPathname} from "./errors/tests.mjs";
-import {print, toPath} from "./static/helpers.mjs";
+import {log, print, toPath} from "./static/helpers.mjs";
 
 
-export const mkfs = n => {
+export const mkfs = async n => {
     /**
      * ініціалізувати ФС
      * @param n Number кількість дескрипторів файлів
@@ -12,17 +12,18 @@ export const mkfs = n => {
     console.log('mkfs')
     createFileForDevice()
     clearFile()
-    return fS.initializeFS(n) || null
+    return await fS.initializeFS(n)
 }
 
-export const stat = pathname => {
+export const stat = async pathname => {
     /**
      * – вивести інформацію про файл
      * (дані дескриптору файлу).
      * @param pathname String
      * */
-    console.log(`stat(${pathname})`)
-    return print(isWrongPathname(pathname) || fS.stat(toPath(pathname)))
+    console.log()
+    // return await print(isWrongPathname(pathname) || fS.stat(toPath(pathname)))
+    return await fS.stat(toPath(pathname)).then(data => console.log(`stat(${pathname})`, data))
 }
 
 export const ls = () => {
@@ -108,13 +109,13 @@ export const truncate = (pathname, size) => {
      * */
 }
 
-export const mkdir = pathname => {
+export const mkdir = async pathname => {
     /**
      * створити нову директорію та створити жорстке посилання на неї,
      * вказане в pathname.
      * */
-    console.log(`mkdir(${pathname})`)
-    return print(isWrongPathname(pathname) || fS.mkdir(pathname))
+
+    return await fS.mkdir(pathname).then(data => console.log(`mkdir(${pathname})`, data))
 }
 
 export const rmdir = pathname => {

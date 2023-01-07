@@ -12,8 +12,8 @@ export const synchronousCall = async arr => {
     return res
 }
 
-export const print = promise =>
-    promise.then(console.log).catch(console.log)
+export const print = async promise =>
+    await promise.then(console.log).catch(console.log)
 
 
 export const log = ell => {
