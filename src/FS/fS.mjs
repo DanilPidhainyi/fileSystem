@@ -117,13 +117,17 @@ export const fS = {
         await this.updateDescriptor(fatherDescriptorIndex, fatherDescriptor)
     },
 
-    searchFileDescriptor(startDescriptor, path) {
-        if (R.empty(path)) {
-            return Promise.resolve(startDescriptor)
+    async searchFileDescriptor(startDescriptorIndex, path) {
+        if (path.length === 0) {
+            return startDescriptorIndex
         }
-
-        // todo get directory content
-        return this.searchFileDescriptor(R.head(path), R.tail(path))
+        const content = await this.getDescriptor(startDescriptorIndex).readContent()
+        const nextDescriptorIndex = content[R.head(path)]
+        if (nextDescriptorIndex !== undefined) {
+            return await this.searchFileDescriptor(nextDescriptorIndex, R.tail(path))
+        } else {
+            return errorWrongPath
+        }
     },
 
     _stat(path) {
@@ -131,26 +135,17 @@ export const fS = {
             return this.searchFileDescriptor(this.openDirectoryNow, R.tail(path))
         }
         else if (path[0] === ROOT_DIRECTORY_NAME) {
-            // todo get descriptor
-            return  this.searchFileDescriptor(LINK_ROOT_DIRECTORY, R.tail(path))
+            return this.searchFileDescriptor(LINK_ROOT_DIRECTORY, R.tail(path))
         }
-        else {
-            return 0
-        }
+
+        return 0
     },
 
     stat(path) {
         if (path) {
             return this._stat(path).then(i => this.getDescriptor(i))
-                // .then(descriptor => {
-                //     console.log('descriptor=', descriptor)
-                //     descriptor.map = descriptor.map.toArray()
-                //     return descriptor
-                // })
         }
-        else {
-            return Promise.reject(errorWrongPath)
-        }
+        return Promise.reject(errorWrongPath)
     },
 
     mkdir(pathname) {
