@@ -5,16 +5,22 @@ import {
     BLOCK_SIZE,
     DIRECTORY,
     LINK_ROOT_DIRECTORY,
-    NUMBER_OF_DESCRIPTORS,
+    NUMBER_OF_DESCRIPTORS, REGULAR,
     ROOT_DIRECTORY_NAME
 } from "./static/constants.mjs";
 import {Descriptor} from "./blocks/Descriptor.mjs";
-import {errorNotFound, errorWrongParameters, errorWrongPath, errorWrongPathname} from "./errors/errors.mjs";
+import {
+    errorFileNotOpen,
+    errorNotFound,
+    errorWrongParameters,
+    errorWrongPath,
+    errorWrongPathname
+} from "./errors/errors.mjs";
 import * as R from "ramda";
 
 export const fS = {
     openDirectoryNow: null,
-    openFileNow: null,
+    openFilesNow: {}, // index Open File: {}
 
     writeInfoToFreeBlocks(info) {
         const bufferList = infoToBuffersList(info)
@@ -88,8 +94,6 @@ export const fS = {
         return this.descriptors[index]
     },
 
-
-
     addDescriptor(descriptor) {
         const free = Object.keys(this.descriptors).find(el => !this.descriptors[el].fileType)
         // todo err not free
@@ -126,7 +130,7 @@ export const fS = {
         const content = await this.getDescriptor(startDescriptorIndex).readContent()
         const nextDescriptorIndex = content[R.head(path)]
         if (nextDescriptorIndex !== undefined) {
-            return await this.searchFileDescriptor(nextDescriptorIndex, R.tail(path))
+            return await this.searchFileDescriptor( nextDescriptorIndex, R.tail(path))
         } else {
             return errorWrongPath
         }
@@ -143,19 +147,63 @@ export const fS = {
         return 0
     },
 
-    stat(path) {
-        if (path) {
-            return this._stat(path)
-                .then(i => this.getDescriptor(i))
-                .then(i => i || errorNotFound)
-        }
-        return Promise.reject(errorWrongPath)
+    stat(pathname) {
+        const path = toPath(pathname)
+        return this._stat(path)
+            .then(i => this.getDescriptor(i))
+            .then(i => i || errorNotFound)
     },
 
     mkdir(pathname) {
         const path = toPath(pathname)
         const descriptor = new Descriptor(DIRECTORY, 0, 1,)
         return this.createFile(path, descriptor, null).then(printErr)
-    }
+    },
 
+    ls() {
+        return this.getDescriptor(this.openDirectoryNow).readContent()
+    },
+
+    create(pathname) {
+        const path = toPath(pathname)
+        const descriptor = new Descriptor(REGULAR, 0, 1, null)
+        return this.createFile(path, descriptor, null).then(printErr)
+    },
+
+    async fd(open_pathname) {
+        const path = toPath(open_pathname)
+        const newIndex = Object.keys(this.openFilesNow).reduce((a, b) => Math.max(a, b), -1) + 1
+        this.openFilesNow[newIndex] = {
+            link: await this._stat(path),
+            offset: 0
+        }
+        return newIndex
+    },
+
+
+    close(fd) {
+        if (!this.openFilesNow[fd]) return errorFileNotOpen
+        delete this.openFilesNow[fd]
+    },
+
+    async seek(fd, offset) {
+        if (!this.openFilesNow[fd]) return errorFileNotOpen
+        this.openFilesNow[fd].offset = offset
+    },
+
+    async read(fd, size) {
+        if (!this.openFilesNow[fd]) return errorFileNotOpen
+        const content = await this
+            .getDescriptor(this.openFilesNow[fd].link)
+            .readSize(this.openFilesNow[fd].offset, size)
+        this.openFilesNow[fd].offset += size
+        return content
+    },
+
+    async write(fd, size) {
+        if (!this.openFilesNow[fd]) return errorFileNotOpen
+        this.getDescriptor(this.openFilesNow[fd].link)
+            .writeSize(this.openFilesNow[fd].offset, size)
+        this.openFilesNow[fd].offset += size
+    }
 }

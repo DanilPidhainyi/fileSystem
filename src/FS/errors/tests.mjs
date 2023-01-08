@@ -6,3 +6,4 @@ export const isWrongPathname = pathname => {
     }
     return false
 }
+
