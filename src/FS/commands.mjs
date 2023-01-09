@@ -83,7 +83,7 @@ export const read = (fd, size) => {
      * – прочитати size байт даних з відкритого файлу, до значення зміщення
      * додається size.
      * */
-    console.log(`-------- read(${fd}, ${size}) -------- `)r
+    console.log(`-------- read(${fd}, ${size}) -------- `)
     return fS.read(fd, size)
 }
 

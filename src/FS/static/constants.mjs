@@ -1,6 +1,7 @@
 export const NAME_CARRIER_INFORMATION = 'CARRIER_INFORMATION.txt'
-export const BLOCK_SIZE = 32 //KiB має бути парне
-export const SIZE_CARRIER_INFORMATION = 2048
+export const BLOCK_SIZE_BIT = 32 * 8 //в бітах
+export const BLOCK_SIZE = BLOCK_SIZE_BIT / 8 // в байтах має бути ціле і парне
+export const SIZE_CARRIER_INFORMATION = 2048 // в байтах
 export const NUMBER_OF_DESCRIPTORS = 5 // > 1
 export const ALL_BLOCKS = SIZE_CARRIER_INFORMATION / BLOCK_SIZE // Integer
 export const DIRECTORY = 'directory'

@@ -9,9 +9,8 @@ import {create, fd, ls, mkfs, close, seek, write} from "../../FS/commands.mjs";
         const file2 = await fd('./fileName')
         console.log('file =', file)
         console.log('file2 =', file2)
-            await write(file, size)
+        await write(file, 10)
         await seek(file, 5)
-
         await close(file)
         await close(file2)
     }

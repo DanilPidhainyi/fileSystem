@@ -143,7 +143,6 @@ export const fS = {
         else if (path[0] === ROOT_DIRECTORY_NAME) {
             return this.searchFileDescriptor(LINK_ROOT_DIRECTORY, R.tail(path))
         }
-
         return 0
     },
 
@@ -173,8 +172,10 @@ export const fS = {
     async fd(open_pathname) {
         const path = toPath(open_pathname)
         const newIndex = Object.keys(this.openFilesNow).reduce((a, b) => Math.max(a, b), -1) + 1
+        const link = await this._stat(path)
+        if (/\D/.test(link)) throw new Error(link)
         this.openFilesNow[newIndex] = {
-            link: await this._stat(path),
+            link: link,
             offset: 0
         }
         return newIndex
@@ -202,8 +203,9 @@ export const fS = {
 
     async write(fd, size) {
         if (!this.openFilesNow[fd]) return errorFileNotOpen
-        this.getDescriptor(this.openFilesNow[fd].link)
-            .writeSize(this.openFilesNow[fd].offset, size)
+        console.log('this.openFilesNow[fd].link', this.openFilesNow[fd].link)
+        await this.getDescriptor(this.openFilesNow[fd].link)
+                  .writeSize(this.openFilesNow[fd].offset, size)
         this.openFilesNow[fd].offset += size
     }
 }

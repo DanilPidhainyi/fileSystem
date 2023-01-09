@@ -1,4 +1,4 @@
-import {BLOCK_SIZE} from "./constants.mjs";
+import {BLOCK_SIZE, BLOCK_SIZE_BIT} from "./constants.mjs";
 
 export const synchronousCall = async arr => {
     /**
@@ -49,6 +49,10 @@ export const infoToBuffersList = info => {
     return splitBufferOnBlocks(
         Buffer.from(JSON.stringify(info))
     )
+}
+
+export const sizeToBlockSize = num => {
+    return Math.ceil(num / BLOCK_SIZE_BIT)
 }
 
 export const bufferSizeToBlockSize = buffer => {
