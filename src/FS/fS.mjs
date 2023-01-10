@@ -207,5 +207,6 @@ export const fS = {
         await this.getDescriptor(this.openFilesNow[fd].link)
                   .writeSize(this.openFilesNow[fd].offset, size)
         this.openFilesNow[fd].offset += size
+
     }
 }
