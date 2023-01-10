@@ -12,8 +12,8 @@ export const synchronousCall = async arr => {
     return res
 }
 
-export const print = async promise =>
-    await promise.then(console.log).catch(console.log)
+export const print = promise =>
+    promise.then(console.log).catch(console.log)
 
 
 export const log = ell => {
@@ -34,24 +34,21 @@ export const printErr = err => {
     }
 }
 
+export const logErr = err => {
+    console.log('error=', err)
+}
+
 export const splitByBlocSize = info => {
     const maxChars = Math.floor(BLOCK_SIZE / 2)
     return JSON.stringify(info).match(new RegExp(`[^]{1,${maxChars}}`, 'g'));
 }
 
-export const toPath = pathname => pathname.split('/') || []
+export const toPath = pathname => pathname.split('/').filter(el => el) || []
 
 export const infoToBuffersList = info => {
     return splitBufferOnBlocks(
         Buffer.from(JSON.stringify(info))
     )
-    // const stringList = splitByBlocSize(JSON.stringify(info))
-    // return Array(stringList.length)
-    //     .fill(new Buffer.alloc(BLOCK_SIZE))
-    //     .map((el, i) => {
-    //         el.write(stringList[i], 'utf-8')
-    //         return el
-    //     })
 }
 
 export const bufferSizeToBlockSize = buffer => {
@@ -80,11 +77,7 @@ export const readBuffer = (error, buffer, bytesRead) => {
     return buffer
 }
 
-// export const buffersListToString = buffersList => {
-//     return
-// }
-
 export const buffersListToInfo = buffersList => {
-    const data = Buffer.concat(buffersList).toString().replaceAll('\x00','')
+    const data = Buffer.concat(buffersList).toString().replace(/\x00/g, '')
     return JSON.parse(data);
 }

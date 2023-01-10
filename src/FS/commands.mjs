@@ -1,29 +1,28 @@
 import {clearFile, createFileForDevice} from "./static/working_with_a_file.mjs";
 import {fS} from "./fS.mjs";
 import {isWrongPathname} from "./errors/tests.mjs";
-import {log, print, toPath} from "./static/helpers.mjs";
+import {print, printErr, toPath} from "./static/helpers.mjs";
 
 
-export const mkfs = async n => {
+export const mkfs = n => {
     /**
      * ініціалізувати ФС
      * @param n Number кількість дескрипторів файлів
      * */
-    console.log('mkfs')
+    console.log('-------- mkfs --------')
     createFileForDevice()
     clearFile()
-    return await fS.initializeFS(n)
+    return fS.initializeFS(n) || null
 }
 
-export const stat = async pathname => {
+export const stat = pathname => {
     /**
      * – вивести інформацію про файл
      * (дані дескриптору файлу).
      * @param pathname String
      * */
-    console.log()
-    // return await print(isWrongPathname(pathname) || fS.stat(toPath(pathname)))
-    return await fS.stat(toPath(pathname)).then(data => console.log(`stat(${pathname})`, data))
+    console.log(`-------- stat(${pathname}) --------`)
+    return print(isWrongPathname(pathname) || fS.stat(pathname))
 }
 
 export const ls = () => {
@@ -32,8 +31,8 @@ export const ls = () => {
      * із зазначенням номерів
      * дескрипторів файлів
      * */
-
-    return null
+    console.log(`-------- ls() --------`)
+    return print(fS.ls())
 }
 
 export const create = pathname => {
@@ -42,7 +41,8 @@ export const create = pathname => {
      * посилання на нього
      * @param pathname String
      * */
-    return null
+    console.log(`-------- create(${pathname}) -------- `)
+    return isWrongPathname(pathname) || fS.create(pathname)
 }
 
 export const fd = open_pathname => {
@@ -54,7 +54,8 @@ export const fd = open_pathname => {
      * числових дескрипторів файлів може бути обмежена.
      * @param pathname String
      * */
-    return null
+    console.log(`-------- fd(${open_pathname}) -------- `)
+    return isWrongPathname(open_pathname) || fS.fd(open_pathname)
 }
 
 export const close = fd => {
@@ -63,7 +64,8 @@ export const close = fd => {
      * стає вільним
      * @param pathname String
      * */
-    return null
+    console.log(`-------- close(${fd}) -------- `)
+    return printErr(fS.close(fd))
 }
 
 export const seek = (fd, offset) => {
@@ -72,7 +74,8 @@ export const seek = (fd, offset) => {
      * з або запис у файл (далі «зміщення»). При відкритті файлу зміщення дорівнює нулю. Це
      * зміщення вказується тільки для цього fd.
      * */
-    return null
+    console.log(`-------- seek(${fd}, ${offset}) -------- `)
+    return fS.seek(fd, offset || 0)
 }
 
 export const read = (fd, size) => {
@@ -80,6 +83,8 @@ export const read = (fd, size) => {
      * – прочитати size байт даних з відкритого файлу, до значення зміщення
      * додається size.
      * */
+    console.log(`-------- read(${fd}, ${size}) -------- `)
+    return print(fS.read(fd, size))
 }
 
 export const write = (fd, size) => {
@@ -87,6 +92,8 @@ export const write = (fd, size) => {
      * записати size байт даних у відкритий файл, до значення зміщення
      * додається size.
      * */
+    console.log(`-------- write(${fd}, ${size}) -------- `)
+    return fS.write(fd, size)
 }
 
 export const link = (pathname1, pathname2) => {
@@ -94,6 +101,8 @@ export const link = (pathname1, pathname2) => {
      * створити жорстке посилання, вказане в pathname2, на файл,
      * на який вказує шляхове ім’я pathname1
      * */
+    console.log(`-------- link (${pathname1}, ${pathname2}) -------- `)
+    return fS.link(pathname1, pathname2)
 }
 
 export const unlink = pathname => {
@@ -109,13 +118,13 @@ export const truncate = (pathname, size) => {
      * */
 }
 
-export const mkdir = async pathname => {
+export const mkdir = pathname => {
     /**
      * створити нову директорію та створити жорстке посилання на неї,
      * вказане в pathname.
      * */
-
-    return await fS.mkdir(pathname).then(data => console.log(`mkdir(${pathname})`, data))
+    console.log(`mkdir(${pathname})---------------------------------------`)
+    return isWrongPathname(pathname) || fS.mkdir(pathname)
 }
 
 export const rmdir = pathname => {
