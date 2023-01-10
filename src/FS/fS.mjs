@@ -10,6 +10,7 @@ import {
 } from "./static/constants.mjs";
 import {Descriptor} from "./blocks/Descriptor.mjs";
 import {
+    errorFileNameIsDuplicated,
     errorFileNotOpen,
     errorNotFound,
     errorWrongParameters,
@@ -105,21 +106,11 @@ export const fS = {
         const fatherDescriptorIndex = await this._stat(path.slice(0, -1))
         await newDescriptor.writeContent(content)
         const indexNewDesc = this.addDescriptor(newDescriptor)
+        // console.log('path', path)
+        // console.log('path[path.length]', path[path.length - 1])
         // console.log('newDescriptor=', newDescriptor)
         // console.log('indexNewDesc=', indexNewDesc)
-
-        const fatherDescriptor = this.getDescriptor(fatherDescriptorIndex)
-        if (!fatherDescriptor) {
-            return errorWrongPath
-        }
-        let fatherContent = await fatherDescriptor.readContent()
-        // todo test однакові імена
-        fatherContent[path.at(-1)] = indexNewDesc
-
-        await fatherDescriptor.writeContent(fatherContent)
-        // console.log('fatherDescriptor=', fatherDescriptor)
-        // console.log('fatherDescriptorIndex=', fatherDescriptorIndex)
-        await this.updateDescriptor(fatherDescriptorIndex, fatherDescriptor)
+        await this._link(indexNewDesc, fatherDescriptorIndex, path)
         return null
     },
 
@@ -127,7 +118,7 @@ export const fS = {
         if (path.length === 0) {
             return startDescriptorIndex
         }
-        const content = await this.getDescriptor(startDescriptorIndex).readContent()
+        const content = await this.getDescriptor(startDescriptorIndex).readContent() || {}
         const nextDescriptorIndex = content[R.head(path)]
         if (nextDescriptorIndex !== undefined) {
             return await this.searchFileDescriptor( nextDescriptorIndex, R.tail(path))
@@ -155,7 +146,7 @@ export const fS = {
 
     mkdir(pathname) {
         const path = toPath(pathname)
-        const descriptor = new Descriptor(DIRECTORY, 0, 1,)
+        const descriptor = new Descriptor(DIRECTORY)
         return this.createFile(path, descriptor, null).then(printErr)
     },
 
@@ -165,7 +156,7 @@ export const fS = {
 
     create(pathname) {
         const path = toPath(pathname)
-        const descriptor = new Descriptor(REGULAR, 0, 1, null)
+        const descriptor = new Descriptor(REGULAR)
         return this.createFile(path, descriptor, null).then(printErr)
     },
 
@@ -203,10 +194,38 @@ export const fS = {
 
     async write(fd, size) {
         if (!this.openFilesNow[fd]) return errorFileNotOpen
-        console.log('this.openFilesNow[fd].link', this.openFilesNow[fd].link)
         await this.getDescriptor(this.openFilesNow[fd].link)
                   .writeSize(this.openFilesNow[fd].offset, size)
         this.openFilesNow[fd].offset += size
+    },
 
+    async _link(indexChild, indexFather, pathChild) {
+        // const fatherDescriptorIndex = await this._stat(pathFather)
+        // const childDescriptorIndex = await this._stat(pathChild)
+        const fatherDescriptor = this.getDescriptor(indexFather)
+        const childDescriptor = this.getDescriptor(indexChild)
+
+        if (!fatherDescriptor || !childDescriptor) return errorWrongPath
+
+        let fatherContent = await fatherDescriptor.readContent()
+
+        if (fatherContent[pathChild[pathChild.length -1]]) return errorFileNameIsDuplicated
+
+        fatherContent[pathChild[pathChild.length -1]] = indexChild
+
+        await fatherDescriptor.writeContent(fatherContent)
+        childDescriptor.numberOfLinks += 1
+        // console.log('fatherDescriptor=', fatherDescriptor)
+        // console.log('fatherDescriptorIndex=', fatherDescriptorIndex)
+        await this.updateDescriptor(indexChild, childDescriptor)
+        await this.updateDescriptor(indexFather, fatherDescriptor)
+    },
+
+    async link(pathname1, pathname2) {
+        const path1 = toPath(pathname1)
+        const path2 = toPath(pathname2)
+        const index1 = await this._stat(path1)
+        const index2 = await this._stat(path2)
+        return await this._link(index1, index2, path1)
     }
 }

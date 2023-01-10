@@ -1,4 +1,4 @@
-import {create, fd, ls, mkfs, close, seek, write} from "../../FS/commands.mjs";
+import {create, fd, ls, mkfs, close, seek, write, read} from "../../FS/commands.mjs";
 
 (
     async () => {
@@ -11,6 +11,7 @@ import {create, fd, ls, mkfs, close, seek, write} from "../../FS/commands.mjs";
         console.log('file2 =', file2)
         await write(file, 10)
         await seek(file, 5)
+        await read(file, 10)
         await close(file)
         await close(file2)
     }

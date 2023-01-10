@@ -84,7 +84,7 @@ export const read = (fd, size) => {
      * додається size.
      * */
     console.log(`-------- read(${fd}, ${size}) -------- `)
-    return fS.read(fd, size)
+    return print(fS.read(fd, size))
 }
 
 export const write = (fd, size) => {
@@ -101,6 +101,8 @@ export const link = (pathname1, pathname2) => {
      * створити жорстке посилання, вказане в pathname2, на файл,
      * на який вказує шляхове ім’я pathname1
      * */
+    console.log(`-------- link (${pathname1}, ${pathname2}) -------- `)
+    return fS.link(pathname1, pathname2)
 }
 
 export const unlink = pathname => {
