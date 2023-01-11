@@ -10,6 +10,7 @@ import {
 } from "./static/constants.mjs";
 import {Descriptor} from "./blocks/Descriptor.mjs";
 import {
+    errorDirectoryNotEmpty,
     errorFileNameIsDuplicated,
     errorFileNotOpen,
     errorNotFound,
@@ -150,6 +151,21 @@ export const fS = {
         return this.createFile(path, descriptor, null).then(printErr)
     },
 
+    isDirectory(pathname) {
+        return this.stat(pathname).then(el => el.fileType === DIRECTORY)
+    },
+
+
+    async rmdir(pathname) {
+        if(
+            await this.stat(pathname)
+                .then(el => el.fileType === DIRECTORY && el.fileSize === 0)
+        ) {
+            return errorDirectoryNotEmpty
+        }
+        return await this.unlink(pathname)
+    },
+
     ls() {
         return this.getDescriptor(this.openDirectoryNow).readContent()
     },
@@ -200,8 +216,6 @@ export const fS = {
     },
 
     async _link(indexChild, indexFather, pathChild) {
-        // const fatherDescriptorIndex = await this._stat(pathFather)
-        // const childDescriptorIndex = await this._stat(pathChild)
         const fatherDescriptor = this.getDescriptor(indexFather)
         const childDescriptor = this.getDescriptor(indexChild)
 
@@ -215,8 +229,6 @@ export const fS = {
 
         await fatherDescriptor.writeContent(fatherContent)
         childDescriptor.numberOfLinks += 1
-        // console.log('fatherDescriptor=', fatherDescriptor)
-        // console.log('fatherDescriptorIndex=', fatherDescriptorIndex)
         await this.updateDescriptor(indexChild, childDescriptor)
         await this.updateDescriptor(indexFather, fatherDescriptor)
     },
@@ -227,5 +239,31 @@ export const fS = {
         const index1 = await this._stat(path1)
         const index2 = await this._stat(path2)
         return await this._link(index1, index2, path1)
+    },
+
+    async unlink(pathname) {
+        const pathChild = toPath(pathname)
+        const pathFather = pathChild.slice(0, -1)
+        const indexChild = await this._stat(pathFather)
+        const indexFather = await this._stat(pathChild)
+        const fatherDescriptor = this.getDescriptor(indexChild)
+        let childDescriptor = this.getDescriptor(indexFather)
+
+        if (!fatherDescriptor || !childDescriptor) return errorWrongPath
+
+        let fatherContent = await fatherDescriptor.readContent()
+
+        if (fatherContent[pathChild[pathChild.length -1]]) return errorFileNameIsDuplicated
+
+        delete fatherContent[pathChild[pathChild.length -1]]
+
+        await fatherDescriptor.writeContent(fatherContent)
+        childDescriptor.numberOfLinks -= 1
+        if (childDescriptor.numberOfLinks === 0) {
+            childDescriptor = new Descriptor()
+        }
+        await this.updateDescriptor(indexChild, childDescriptor)
+        await this.updateDescriptor(indexFather, fatherDescriptor)
+
     }
 }

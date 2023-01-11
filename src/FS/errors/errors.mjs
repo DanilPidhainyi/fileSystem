@@ -4,3 +4,5 @@ export const errorWrongPathname = 'Помилковий pathname'
 export const errorNotFound = 'Нічого не знайдено'
 export const errorFileNotOpen = 'Файл не відкрито'
 export const errorFileNameIsDuplicated = "Файл з таким ім'ям вже є в директорії"
+export const errorDirectoryNotEmpty = "Директорія не пуста"
+export const errorItsDirectory = "Посилання вказує на директорію"

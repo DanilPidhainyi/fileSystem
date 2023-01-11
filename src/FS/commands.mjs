@@ -2,6 +2,7 @@ import {clearFile, createFileForDevice} from "./static/working_with_a_file.mjs";
 import {fS} from "./fS.mjs";
 import {isWrongPathname} from "./errors/tests.mjs";
 import {print, printErr, toPath} from "./static/helpers.mjs";
+import {errorFileNotOpen, errorItsDirectory} from "./errors/errors.mjs";
 
 
 export const mkfs = n => {
@@ -101,14 +102,19 @@ export const link = (pathname1, pathname2) => {
      * створити жорстке посилання, вказане в pathname2, на файл,
      * на який вказує шляхове ім’я pathname1
      * */
+    // todo may don`t work with dir
     console.log(`-------- link (${pathname1}, ${pathname2}) -------- `)
     return fS.link(pathname1, pathname2)
 }
 
-export const unlink = pathname => {
+export const unlink = async pathname => {
     /**
      * знищити жорстке посилання на файл, вказане в pathname
      * */
+    // todo may don`t work with dir
+    console.log(`-------- unlink (${pathname}) -------- `)
+    if (await fS.isDirectory(pathname)) return errorItsDirectory
+    return fS.unlink(pathname)
 }
 
 export const truncate = (pathname, size) => {
@@ -133,6 +139,8 @@ export const rmdir = pathname => {
      * відповідне жорстке посилання на неї (вміст директорії не повинен мати жодного
      * жорсткого посилання, крім наперед визначених жорстких посилань з іменами . та ..).
      * */
+    console.log(`rmdir(${pathname})---------------------------------------`)
+    return isWrongPathname(pathname) || fS.rmdir(pathname)
 }
 
 export const cd = pathname => {
