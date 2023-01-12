@@ -97,14 +97,15 @@ export const write = (fd, size) => {
     return fS.write(fd, size)
 }
 
-export const link = (pathname1, pathname2) => {
+export const link = async (pathname1, pathname2) => {
     /**
      * створити жорстке посилання, вказане в pathname2, на файл,
      * на який вказує шляхове ім’я pathname1
      * */
     // todo may don`t work with dir
     console.log(`-------- link (${pathname1}, ${pathname2}) -------- `)
-    return fS.link(pathname1, pathname2)
+    if (await fS.isDirectory(pathname1)) return errorItsDirectory
+    return printErr(fS.link(pathname1, pathname2))
 }
 
 export const unlink = async pathname => {
@@ -114,7 +115,7 @@ export const unlink = async pathname => {
     // todo may don`t work with dir
     console.log(`-------- unlink (${pathname}) -------- `)
     if (await fS.isDirectory(pathname)) return errorItsDirectory
-    return fS.unlink(pathname)
+    return printErr(isWrongPathname(pathname) || fS.unlink(pathname))
 }
 
 export const truncate = (pathname, size) => {

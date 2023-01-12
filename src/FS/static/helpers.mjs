@@ -28,9 +28,10 @@ export const catchErrs = callback => err => {
     return err
 }
 
-export const printErr = err => {
-    if (err) {
-        console.log('err=', err)
+export const printErr = async err => {
+    const er = await err
+    if (er) {
+        console.log('err=', er)
     }
 }
 

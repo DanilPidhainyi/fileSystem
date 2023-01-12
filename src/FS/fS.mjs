@@ -253,7 +253,6 @@ export const fS = {
 
         let fatherContent = await fatherDescriptor.readContent()
 
-        if (fatherContent[pathChild[pathChild.length -1]]) return errorFileNameIsDuplicated
 
         delete fatherContent[pathChild[pathChild.length -1]]
 
