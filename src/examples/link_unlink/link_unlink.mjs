@@ -1,4 +1,4 @@
-import {create, link, ls, mkdir, mkfs, stat, unlink} from "../../FS/commands.mjs";
+import {cd, create, link, ls, mkdir, mkfs, stat, unlink} from "../../FS/commands.mjs";
 
 (
     async () => {
@@ -6,10 +6,12 @@ import {create, link, ls, mkdir, mkfs, stat, unlink} from "../../FS/commands.mjs
         await create('root/new File')
         await mkdir('./newDir')
         await ls()
-        await stat('./new File')
         await link('./new File', './newDir')
         await stat('./new File')
-        await stat('./newDir')
+        await cd('./newDir')
+        await ls()
+        await cd()
+        await ls()
         await unlink('./newDir/new File')
         await stat('./new File')
         await ls()

@@ -82,3 +82,13 @@ export const buffersListToInfo = buffersList => {
     const data = Buffer.concat(buffersList).toString().replace(/\x00/g, '')
     return JSON.parse(data);
 }
+
+export const toVueDs = ds => {
+    return (
+        `Дескриптор: 
+Тип файлу: ${ds.fileType}
+Розмір файлу: ${ds.fileSize}
+Кількість жорстких посилань: ${ds.numberOfLinks}
+Номери зайнятих боків: ${ds.map.getBusyBlocks()}`
+    )
+}

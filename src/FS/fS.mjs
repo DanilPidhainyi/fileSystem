@@ -1,4 +1,12 @@
-import {buffersListToInfo, infoToBuffersList, log, printErr, synchronousCall, toPath} from "./static/helpers.mjs";
+import {
+    buffersListToInfo,
+    infoToBuffersList,
+    log,
+    printErr,
+    synchronousCall,
+    toPath,
+    toVueDs
+} from "./static/helpers.mjs";
 import {device} from "./device/device.mjs";
 import {BitMap} from "./blocks/BitMap.mjs";
 import {
@@ -140,8 +148,9 @@ export const fS = {
 
     stat(pathname) {
         const path = toPath(pathname)
+
         return this._stat(path)
-            .then(i => this.getDescriptor(i))
+            .then(i => toVueDs(this.getDescriptor(i)))
             .then(i => i || errorNotFound)
     },
 
@@ -263,5 +272,23 @@ export const fS = {
         await this.updateDescriptor(indexChild, childDescriptor)
         await this.updateDescriptor(indexFather, fatherDescriptor)
 
+    },
+
+    whereAmI () {
+        return null
+    },
+
+    async cd(pathname) {
+        if (!pathname) {
+            this.openDirectoryNow = LINK_ROOT_DIRECTORY
+        } else {
+            const path = toPath(pathname)
+            const newPath = await this._stat(path)
+            if (Number.isInteger(+newPath)){
+                this.openDirectoryNow = newPath
+            } else {
+                return newPath
+            }
+        }
     }
 }

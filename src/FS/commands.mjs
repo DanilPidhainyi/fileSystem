@@ -130,7 +130,7 @@ export const mkdir = pathname => {
      * створити нову директорію та створити жорстке посилання на неї,
      * вказане в pathname.
      * */
-    console.log(`mkdir(${pathname})---------------------------------------`)
+    console.log(`-------- mkdir(${pathname}) -------- `)
     return isWrongPathname(pathname) || fS.mkdir(pathname)
 }
 
@@ -140,7 +140,7 @@ export const rmdir = pathname => {
      * відповідне жорстке посилання на неї (вміст директорії не повинен мати жодного
      * жорсткого посилання, крім наперед визначених жорстких посилань з іменами . та ..).
      * */
-    console.log(`rmdir(${pathname})---------------------------------------`)
+    console.log(`-------- rmdir(${pathname}) -------- `)
     return printErr(isWrongPathname(pathname) || fS.rmdir(pathname))
 }
 
@@ -148,6 +148,8 @@ export const cd = pathname => {
     /**
      * змінити поточну робочу директорію.
      * */
+    console.log(`-------- cd(${pathname || ''}) -------- `)
+    return printErr(fS.cd(pathname))
 }
 
 export const symlink = (str, pathname) => {
