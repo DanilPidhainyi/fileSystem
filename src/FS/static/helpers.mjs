@@ -86,9 +86,9 @@ export const buffersListToInfo = buffersList => {
 export const toVueDs = ds => {
     return (
         `Дескриптор: 
-Тип файлу: ${ds.fileType}
-Розмір файлу: ${ds.fileSize}
-Кількість жорстких посилань: ${ds.numberOfLinks}
-Номери зайнятих боків: ${ds.map.getBusyBlocks()}`
+  Тип файлу: ${ds.fileType}
+  Розмір файлу: ${ds.fileSize}
+  Кількість жорстких посилань: ${ds.numberOfLinks}
+  Номери зайнятих боків: ${ds.map.getBusyBlocks().join(', ')}`
     )
 }

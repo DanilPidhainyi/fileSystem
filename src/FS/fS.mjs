@@ -252,10 +252,10 @@ export const fS = {
     async unlink(pathname) {
         const pathChild = toPath(pathname)
         const pathFather = pathChild.slice(0, -1)
-        const indexChild = await this._stat(pathFather)
-        const indexFather = await this._stat(pathChild)
-        const fatherDescriptor = this.getDescriptor(indexChild)
-        let childDescriptor = this.getDescriptor(indexFather)
+        const indexChild = await this._stat(pathChild)
+        const indexFather = await this._stat(pathFather)
+        const fatherDescriptor = this.getDescriptor(indexFather)
+        let childDescriptor = this.getDescriptor(indexChild)
 
         if (!fatherDescriptor || !childDescriptor) return errorWrongPath
 
