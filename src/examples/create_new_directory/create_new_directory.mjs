@@ -1,4 +1,4 @@
-import {ls, mkdir, mkfs, stat} from "../../FS/commands.mjs";
+import {ls, mkdir, mkfs, rmdir, stat} from "../../FS/commands.mjs";
 
 (
     async () => {
@@ -7,6 +7,7 @@ import {ls, mkdir, mkfs, stat} from "../../FS/commands.mjs";
         await mkdir('./newDir')
         await stat('.')
         await ls()
-        await stat('./newDir')
+        await rmdir('./newDir')
+        await ls()
     }
 )()

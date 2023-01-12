@@ -157,12 +157,11 @@ export const fS = {
 
 
     async rmdir(pathname) {
-        if(
-            await this.stat(pathname)
-                .then(el => el.fileType === DIRECTORY && el.fileSize === 0)
-        ) {
-            return errorDirectoryNotEmpty
-        }
+        const isEmptyDirectory = await this.stat(pathname)
+            .then(el => el.fileType === DIRECTORY && el.fileSize === 0)
+
+        if(!isEmptyDirectory) return errorDirectoryNotEmpty
+
         return await this.unlink(pathname)
     },
 

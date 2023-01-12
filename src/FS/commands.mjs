@@ -141,7 +141,7 @@ export const rmdir = pathname => {
      * жорсткого посилання, крім наперед визначених жорстких посилань з іменами . та ..).
      * */
     console.log(`rmdir(${pathname})---------------------------------------`)
-    return isWrongPathname(pathname) || fS.rmdir(pathname)
+    return printErr(isWrongPathname(pathname) || fS.rmdir(pathname))
 }
 
 export const cd = pathname => {
