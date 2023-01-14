@@ -1,5 +1,6 @@
 export const errorWrongPath = 'Помилковий шлях до файлу'
 export const errorWrongDescriptionNumber = 'Неправильна кількість дескрипторів'
+export const errorWrongNotDescription = 'Дескриптор не існує'
 export const errorWrongParameters = 'Неправильні параметри'
 export const errorWrongPathname = 'Помилковий pathname'
 export const errorNotFound = 'Нічого не знайдено'

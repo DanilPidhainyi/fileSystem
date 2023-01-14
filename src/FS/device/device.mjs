@@ -76,4 +76,16 @@ export const device = {
         })
     },
 
+    clearBlocks(arr) {
+        const cleanBlock = async index => {
+            const buf = await this._readBlock(index)
+            if (buf.toString().replace(/\x00/g, '')) {
+                await this._writeBlocks(index, Buffer.alloc(BLOCK_SIZE))
+            }
+        }
+
+        return this.openThen(async () => {
+            arr.forEach(await cleanBlock)
+        })
+    }
 }

@@ -1,22 +1,5 @@
 import {BLOCK_SIZE} from "./constants.mjs";
 
-// export const synchronousCall = async arr => {
-//     /**
-//      * required for a synchronous call Promises
-//      * */
-//     const res = []
-//
-//     for (const item of arr) {
-//         res.push(await item)
-//     }
-//     return res
-// }
-
-
-export const print = promise =>
-    promise.then(console.log).catch(console.log)
-
-
 export const log = ell => {
     console.log('log=', ell)
     return ell
@@ -29,12 +12,6 @@ export const catchErrs = callback => err => {
     return err
 }
 
-export const printErr = async err => {
-    const er = await err
-    if (er) {
-        console.log('err=', er)
-    }
-}
 
 export const logErr = err => {
     console.log('error=', err)
@@ -89,13 +66,46 @@ export const splitArr = (arr, sizeOne) => {
     return Array(sizeNewArr).fill().map((_, i) => arr.slice(i * sizeOne, (i + 1) * sizeOne))
 }
 
+export const toVueLs = obj => {
+    if (Object.keys(obj).length === 0) return 'Директорія порожня'
+    return '' + Object.keys(obj).map(el => `  ${el}: ${obj[el]}`).join('\n')
+}
+
 export const toVueDs = ds => {
     return (
         `Дескриптор: 
   Тип файлу: ${ds.fileType}
   Розмір файлу: ${ds.fileSize}
-  Кількість жорстких посилань: ${ds.numberOfLinks}
+  Кількість жорстких посилань: ${ds.numberOfLinks}`
+    + (ds.fileSize ?
+    ` 
   Посилання на блок 
-  з посиланнями на блоки: ${ds.link.get()}`
-    )
+  з посиланнями на блоки: ${ds.link.index}
+  Посилання на блоки ${ds.link.get()}`:
+`
+  Посилання на блок з блоками відсутнє`))
+}
+
+export const printCommand = (command, data, isWorn) => {
+    if (isWorn) {
+        console.log('\x1b[41m', command, '\x1b[0m', data)
+    } else {
+        if (data.length > 1) {
+            data = '\n' + data
+        }
+        console.log('\x1b[42m', command,'\x1b[0m', data);
+    }
+}
+
+export const print = (command, promise) =>
+    promise.then(el => printCommand(command, el))
+        .catch(er => printCommand(command, er, true) )
+
+export const printErr = async (command, err) => {
+    const er = await err
+    if (er) {
+        printCommand(command, er, true)
+    } else {
+        printCommand(command, '')
+    }
 }

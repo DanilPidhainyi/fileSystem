@@ -2,7 +2,7 @@ import {
     MAX_NUMBER_OF_DESCRIPTORS,
 } from "../static/constants.mjs";
 import {Descriptor} from "../classes/Descriptor.mjs";
-import {errorWrongDescriptionNumber} from "../errors/errors.mjs";
+import {errorWrongDescriptionNumber, errorWrongNotDescription} from "../errors/errors.mjs";
 import {fS} from "../fS.mjs";
 
 export const listDescriptors = {
@@ -23,6 +23,7 @@ export const listDescriptors = {
     },
 
     setByIndex(index, descriptor) {
+        if (!this.descriptors[index]) return errorWrongNotDescription
         this.descriptors[index] = descriptor
         return this.write()
     },

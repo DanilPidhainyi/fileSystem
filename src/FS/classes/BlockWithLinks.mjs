@@ -26,4 +26,8 @@ export class BlockWithLinks {
     set(data) {
         this.data = data
     }
+
+    add(bl) {
+        this.data = [...this.data, ...bl]
+    }
 }

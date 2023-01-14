@@ -1,13 +1,14 @@
 import {
     buffersListToInfo,
-    infoToBuffersList,
+    infoToBuffersList, log,
     printErr,
     toPath,
-    toVueDs
+    toVueDs, toVueLs
 } from "./static/helpers.mjs";
 import {device} from "./device/device.mjs";
 import {bitMap} from "./bitMap/bitMap.mjs";
 import {
+    BLOCK_SIZE,
     DIRECTORY,
     LINK_ROOT_DIRECTORY, REGULAR,
     ROOT_DIRECTORY_NAME
@@ -34,6 +35,13 @@ export const fS = {
             .then(() => bitMap.setBusy(freeBlocks))
             .then(() => freeBlocks)
             .catch(() => null)
+    },
+
+    async writeEmptyToFreeBlocks(numBlocks) {
+        const free = bitMap.getFreeBlocks().slice(0, numBlocks)
+        await device.clearBlocks(free)
+        await bitMap.setBusy(free)
+        return free
     },
 
     writeInfoToOldBlocks(info, arrBlocks) {
@@ -105,16 +113,21 @@ export const fS = {
     mkdir(pathname) {
         const path = toPath(pathname)
         const descriptor = new Descriptor(DIRECTORY)
-        return this.createFile(path, descriptor, null).then(printErr)
+        return this.createFile(path, descriptor)
     },
 
     isDirectory(pathname) {
-        return this.stat(pathname).then(el => el.fileType === DIRECTORY)
+        const path = toPath(pathname)
+        return this._stat(path)
+            .then(index => listDescriptors.getDescriptor(index))
+            .then(el => el.fileType === DIRECTORY)
     },
 
 
     async rmdir(pathname) {
-        const isEmptyDirectory = await this.stat(pathname)
+        const path = toPath(pathname)
+        const isEmptyDirectory = await this._stat(path)
+            .then(index => listDescriptors.getDescriptor(index))
             .then(el => el.fileType === DIRECTORY && el.fileSize === 0)
 
         if(!isEmptyDirectory) return errorDirectoryNotEmpty
@@ -123,13 +136,13 @@ export const fS = {
     },
 
     ls() {
-        return listDescriptors.getDescriptor(this.openDirectoryNow).readContent()
+        return listDescriptors.getDescriptor(this.openDirectoryNow).readContent().then(toVueLs)
     },
 
     create(pathname) {
         const path = toPath(pathname)
         const descriptor = new Descriptor(REGULAR)
-        return this.createFile(path, descriptor, null).then(printErr)
+        return this.createFile(path, descriptor, null)
     },
 
     async fd(open_pathname) {
@@ -223,18 +236,35 @@ export const fS = {
 
     },
 
-
     async cd(pathname) {
         if (!pathname) {
             this.openDirectoryNow = LINK_ROOT_DIRECTORY
+            return null
+        }
+        const path = toPath(pathname)
+        const newPath = await this._stat(path)
+        if (Number.isInteger(+newPath)){
+            this.openDirectoryNow = newPath
         } else {
-            const path = toPath(pathname)
-            const newPath = await this._stat(path)
-            if (Number.isInteger(+newPath)){
-                this.openDirectoryNow = newPath
-            } else {
-                return newPath
-            }
+            return newPath
+        }
+    },
+
+    async truncate(pathname, size) {
+        const path = toPath(pathname)
+        const index = await this._stat(path)
+        const descriptor = await listDescriptors.getDescriptor(index)
+
+        if (descriptor.fileSize === size) return null
+        if (descriptor.fileSize > size) {
+            const rmBl = Math.ceil((descriptor.fileSize - size) / BLOCK_SIZE)
+            descriptor.rm(rmBl)
+            return listDescriptors.updateDescriptor(index, descriptor)
+        }
+        if (descriptor.fileSize < size) {
+            const newBl = Math.ceil((size - descriptor.fileSize) / BLOCK_SIZE)
+            descriptor.add(await fS.writeEmptyToFreeBlocks(newBl))
+            return listDescriptors.updateDescriptor(index, descriptor)
         }
     }
 }

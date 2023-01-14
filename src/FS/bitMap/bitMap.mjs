@@ -94,7 +94,12 @@ export const bitMap = {
          * */
         map.forEach(el => this.bs.set(el, 0))
         return this
-    }
+    },
 
+    getForUse() {
+        const free = this.getFreeBlocks()[0]
+        this.setBusy([free])
+        return free
+    }
 
 }
