@@ -1,6 +1,6 @@
 import BlockDevice from "blockdevice";
 import {BLOCK_SIZE, NAME_CARRIER_INFORMATION, SIZE_CARRIER_INFORMATION} from "../static/constants.mjs";
-import {catchErrs, log, logErr, print, printErr, readBuffer, synchronousCall} from "../static/helpers.mjs";
+import {catchErrs, logErr} from "../static/helpers.mjs";
 
 
 export const device = {
@@ -54,27 +54,7 @@ export const device = {
             }
             return res
         })
-
-
-        // return new Promise((resolve, reject) => {
-        //     this.open(_ => {
-        //         Promise.all(
-        //             arr.map(blocNumber => this._readBlock(blocNumber).catch(_ => null))
-        //         ).then(data => resolve(data)).catch(err => reject(err))
-        //     })
-        // })
     },
-
-    // writeBlocMap(blocMap) {
-    //     /**
-    //      * @param blocMap Obj {blocNumber: buffer}
-    //      * */
-    //     this.open(_ => {
-    //         Object.keys(blocMap).map(blocNumber => {
-    //             this.device.writeBlocks(blocNumber, blocMap[blocNumber], printErr)
-    //         })
-    //     })
-    // },
 
     writeBlocMap(blocMap) {
         /**
@@ -87,6 +67,7 @@ export const device = {
         })
     },
 
+
     writeBufferList(blocArr, freeBlocs) {
         return this.openThen(async () => {
             for (let i = 0; i < freeBlocs.length; i++) {
@@ -96,7 +77,3 @@ export const device = {
     },
 
 }
-
-// device.initializationBlockDevice()
-// device.writeBlocMap({1: Buffer.alloc(BLOCK_SIZE, 1), 2: Buffer.alloc(BLOCK_SIZE, 0)})
-// device.readBlocks([1, 2])

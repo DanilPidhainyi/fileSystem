@@ -1,32 +1,27 @@
 import {
     buffersListToInfo,
     infoToBuffersList,
-    log,
     printErr,
-    synchronousCall,
     toPath,
     toVueDs
 } from "./static/helpers.mjs";
 import {device} from "./device/device.mjs";
-import {BitMap} from "./blocks/BitMap.mjs";
+import {bitMap} from "./bitMap/bitMap.mjs";
 import {
-    BLOCK_SIZE,
     DIRECTORY,
-    LINK_ROOT_DIRECTORY,
-    NUMBER_OF_DESCRIPTORS, REGULAR,
+    LINK_ROOT_DIRECTORY, REGULAR,
     ROOT_DIRECTORY_NAME
 } from "./static/constants.mjs";
-import {Descriptor} from "./blocks/Descriptor.mjs";
+import {Descriptor} from "./classes/Descriptor.mjs";
 import {
     errorDirectoryNotEmpty,
     errorFileNameIsDuplicated,
     errorFileNotOpen,
     errorNotFound,
-    errorWrongParameters,
     errorWrongPath,
-    errorWrongPathname
 } from "./errors/errors.mjs";
 import * as R from "ramda";
+import {listDescriptors} from "./listDescriptors/listDescriptors.mjs";
 
 export const fS = {
     openDirectoryNow: null,
@@ -34,91 +29,44 @@ export const fS = {
 
     writeInfoToFreeBlocks(info) {
         const bufferList = infoToBuffersList(info)
-        const freeBlocks = this.bitMap.getFreeBlocks().slice(0, bufferList.length)
+        const freeBlocks = bitMap.getFreeBlocks().slice(0, bufferList.length)
         return device.writeBufferList(bufferList, freeBlocks)
-            .then(() => this.bitMap.setBusy(freeBlocks))
+            .then(() => bitMap.setBusy(freeBlocks))
             .then(() => freeBlocks)
             .catch(() => null)
     },
 
-    writeInfoToOldBitMap(info, oldMap) {
+    writeInfoToOldBlocks(info, arrBlocks) {
         const bufferList = infoToBuffersList(info)
-        const freeBlocks = oldMap.getBusyBlocks().concat(this.bitMap.getFreeBlocks()).slice(0, bufferList.length)
+        const freeBlocks = arrBlocks.concat(bitMap.getFreeBlocks()).slice(0, bufferList.length)
         return device.writeBufferList(bufferList, freeBlocks)
-            .then(() => this.bitMap.setBusy(freeBlocks))
+            .then(() => bitMap.setBusy(freeBlocks))
             .then(() => freeBlocks)
             .catch(() => null)
     },
 
-    writeThisBitMap() {
-        return device.writeBlocMap(infoToBuffersList(this.bitMap.toArray()))
-    },
-
-    writeDescriptors(descriptors=this.descriptors) {
-        return this.writeInfoToFreeBlocks(descriptors).then(data => {
-            // todo
-            this.descriptorsMap = data
-        })
-    },
-
-    initializeBitMap() {
-        this.bitMap = new BitMap()
-        const needBlocks = infoToBuffersList(this.bitMap.toArray()).length
-        this.bitMap.setRange(0, needBlocks, 1)
-        return this.writeThisBitMap()
-    },
 
     initializeRootDirectory() {
         this.openDirectoryNow = LINK_ROOT_DIRECTORY
-        return new Descriptor(DIRECTORY, 0, 1)
+        const root = new Descriptor(DIRECTORY, 0, 1)
+        return listDescriptors.setByIndex(LINK_ROOT_DIRECTORY, root)
     },
 
-    initializeListDescriptors() {
-        this.descriptors = Array(NUMBER_OF_DESCRIPTORS).fill(new Descriptor())
-        this.descriptors[LINK_ROOT_DIRECTORY] = this.initializeRootDirectory()
-        return this.writeDescriptors()
+    async initializeFS(n) {
+        await device.initializationBlockDevice(n)
+        await bitMap.initializeBitMap()
+        await listDescriptors.initializeListDescriptors(n)
+        await this.initializeRootDirectory()
     },
 
-    initializeFS(n) {
-        device.initializationBlockDevice(n)
-        return synchronousCall([
-            this.initializeBitMap(),
-            this.initializeListDescriptors(),
-        ])
-    },
-
-    readObjOnMap(arr) {
+    readObjOnBlocks(arr) {
         return device.readBlocks(arr).then(buffersListToInfo).catch(console.log)
-    },
-
-    readObjOnBitMap(map) {
-        return this.readObjOnMap(map.getBusyBlocks())
-    },
-
-    updateDescriptor(index, newValue) {
-        this.descriptors[index] = newValue
-        return this.writeDescriptors()
-    },
-
-    getDescriptor(index) {
-        return this.descriptors[index]
-    },
-
-    addDescriptor(descriptor) {
-        const free = Object.keys(this.descriptors).find(el => !this.descriptors[el].fileType)
-        // todo err not free
-        this.descriptors[free] = descriptor
-        return free
     },
 
     async createFile(path, newDescriptor, content) {
         const fatherDescriptorIndex = await this._stat(path.slice(0, -1))
         await newDescriptor.writeContent(content)
-        const indexNewDesc = this.addDescriptor(newDescriptor)
-        // console.log('path', path)
-        // console.log('path[path.length]', path[path.length - 1])
-        // console.log('newDescriptor=', newDescriptor)
-        // console.log('indexNewDesc=', indexNewDesc)
+        const indexNewDesc = await listDescriptors.addDescriptor(newDescriptor)
         await this._link(indexNewDesc, fatherDescriptorIndex, path)
         return null
     },
@@ -127,7 +75,7 @@ export const fS = {
         if (path.length === 0) {
             return startDescriptorIndex
         }
-        const content = await this.getDescriptor(startDescriptorIndex).readContent() || {}
+        const content = await listDescriptors.getDescriptor(startDescriptorIndex).readContent() || {}
         const nextDescriptorIndex = content[R.head(path)]
         if (nextDescriptorIndex !== undefined) {
             return await this.searchFileDescriptor( nextDescriptorIndex, R.tail(path))
@@ -150,7 +98,7 @@ export const fS = {
         const path = toPath(pathname)
 
         return this._stat(path)
-            .then(i => toVueDs(this.getDescriptor(i)))
+            .then(i => toVueDs(listDescriptors.getDescriptor(i)))
             .then(i => i || errorNotFound)
     },
 
@@ -175,7 +123,7 @@ export const fS = {
     },
 
     ls() {
-        return this.getDescriptor(this.openDirectoryNow).readContent()
+        return listDescriptors.getDescriptor(this.openDirectoryNow).readContent()
     },
 
     create(pathname) {
@@ -209,7 +157,7 @@ export const fS = {
 
     async read(fd, size) {
         if (!this.openFilesNow[fd]) return errorFileNotOpen
-        const content = await this
+        const content = await listDescriptors
             .getDescriptor(this.openFilesNow[fd].link)
             .readSize(this.openFilesNow[fd].offset, size)
         this.openFilesNow[fd].offset += size
@@ -218,14 +166,15 @@ export const fS = {
 
     async write(fd, size) {
         if (!this.openFilesNow[fd]) return errorFileNotOpen
-        await this.getDescriptor(this.openFilesNow[fd].link)
-                  .writeSize(this.openFilesNow[fd].offset, size)
+        await listDescriptors
+            .getDescriptor(this.openFilesNow[fd].link)
+            .writeSize(this.openFilesNow[fd].offset, size)
         this.openFilesNow[fd].offset += size
     },
 
     async _link(indexChild, indexFather, pathChild) {
-        const fatherDescriptor = this.getDescriptor(indexFather)
-        const childDescriptor = this.getDescriptor(indexChild)
+        const fatherDescriptor = listDescriptors.getDescriptor(indexFather)
+        const childDescriptor = listDescriptors.getDescriptor(indexChild)
 
         if (!fatherDescriptor || !childDescriptor) return errorWrongPath
 
@@ -237,8 +186,8 @@ export const fS = {
 
         await fatherDescriptor.writeContent(fatherContent)
         childDescriptor.numberOfLinks += 1
-        await this.updateDescriptor(indexChild, childDescriptor)
-        await this.updateDescriptor(indexFather, fatherDescriptor)
+        await listDescriptors.updateDescriptor(indexChild, childDescriptor)
+        await listDescriptors.updateDescriptor(indexFather, fatherDescriptor)
     },
 
     async link(pathname1, pathname2) {
@@ -254,8 +203,8 @@ export const fS = {
         const pathFather = pathChild.slice(0, -1)
         const indexChild = await this._stat(pathChild)
         const indexFather = await this._stat(pathFather)
-        const fatherDescriptor = this.getDescriptor(indexFather)
-        let childDescriptor = this.getDescriptor(indexChild)
+        const fatherDescriptor = listDescriptors.getDescriptor(indexFather)
+        let childDescriptor = listDescriptors.getDescriptor(indexChild)
 
         if (!fatherDescriptor || !childDescriptor) return errorWrongPath
 
@@ -269,14 +218,11 @@ export const fS = {
         if (childDescriptor.numberOfLinks === 0) {
             childDescriptor = new Descriptor()
         }
-        await this.updateDescriptor(indexChild, childDescriptor)
-        await this.updateDescriptor(indexFather, fatherDescriptor)
+        await listDescriptors.updateDescriptor(indexChild, childDescriptor)
+        await listDescriptors.updateDescriptor(indexFather, fatherDescriptor)
 
     },
 
-    whereAmI () {
-        return null
-    },
 
     async cd(pathname) {
         if (!pathname) {

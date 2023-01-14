@@ -1,16 +1,17 @@
 import {BLOCK_SIZE} from "./constants.mjs";
 
-export const synchronousCall = async arr => {
-    /**
-     * required for a synchronous call Promises
-     * */
-    const res = []
+// export const synchronousCall = async arr => {
+//     /**
+//      * required for a synchronous call Promises
+//      * */
+//     const res = []
+//
+//     for (const item of arr) {
+//         res.push(await item)
+//     }
+//     return res
+// }
 
-    for (const item of arr) {
-        res.push(await item)
-    }
-    return res
-}
 
 export const print = promise =>
     promise.then(console.log).catch(console.log)
@@ -83,12 +84,18 @@ export const buffersListToInfo = buffersList => {
     return JSON.parse(data);
 }
 
+export const splitArr = (arr, sizeOne) => {
+    const sizeNewArr = Math.ceil(arr.length / sizeOne)
+    return Array(sizeNewArr).fill().map((_, i) => arr.slice(i * sizeOne, (i + 1) * sizeOne))
+}
+
 export const toVueDs = ds => {
     return (
         `Дескриптор: 
   Тип файлу: ${ds.fileType}
   Розмір файлу: ${ds.fileSize}
   Кількість жорстких посилань: ${ds.numberOfLinks}
-  Номери зайнятих боків: ${ds.map.getBusyBlocks().join(', ')}`
+  Посилання на блок 
+  з посиланнями на блоки: ${ds.link.get()}`
     )
 }

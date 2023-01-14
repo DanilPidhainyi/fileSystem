@@ -1,8 +1,8 @@
 import {clearFile, createFileForDevice} from "./static/working_with_a_file.mjs";
 import {fS} from "./fS.mjs";
 import {isWrongPathname} from "./errors/tests.mjs";
-import {print, printErr, toPath} from "./static/helpers.mjs";
-import {errorFileNotOpen, errorItsDirectory} from "./errors/errors.mjs";
+import {print, printErr} from "./static/helpers.mjs";
+import {errorItsDirectory} from "./errors/errors.mjs";
 
 
 export const mkfs = n => {
