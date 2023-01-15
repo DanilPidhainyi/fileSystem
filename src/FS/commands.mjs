@@ -145,7 +145,7 @@ export const cd = pathname => {
     /**
      * змінити поточну робочу директорію.
      * */
-    return printErr(`cd(${pathname || ''}) `, fS.cd(pathname))
+    return printErr(`cd ${pathname || ''} `, fS.cd(pathname))
 }
 
 export const symlink = (str, pathname) => {
@@ -154,4 +154,6 @@ export const symlink = (str, pathname) => {
      * нього відповідне жорстке посилання. Максимальна довжина вмісту
      * символічного посилання str не має перевищувати розмір одного блоку.
      * */
+    const res = isWrongPathname(pathname) || fS.symlink(str, pathname)
+    return printErr(`symlink ${str} ${pathname} `, res)
 }

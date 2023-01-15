@@ -1,6 +1,6 @@
 import {
     buffersListToInfo,
-    infoToBuffersList, log,
+    infoToBuffersList, isNotValidFileName, log,
     printErr,
     toPath,
     toVueDs, toVueLs
@@ -10,19 +10,20 @@ import {bitMap} from "./bitMap/bitMap.mjs";
 import {
     BLOCK_SIZE,
     DIRECTORY,
-    LINK_ROOT_DIRECTORY, REGULAR,
-    ROOT_DIRECTORY_NAME
+    LINK_ROOT_DIRECTORY, MAX_SWITCHOVER, REGULAR,
+    ROOT_DIRECTORY_NAME, SYMLINK
 } from "./static/constants.mjs";
 import {Descriptor} from "./classes/Descriptor.mjs";
 import {
     errorDirectoryNotEmpty,
     errorFileNameIsDuplicated,
-    errorFileNotOpen,
-    errorNotFound,
+    errorFileNotOpen, errorMaxSwitchover,
+    errorNotFound, errorOnFile,
     errorWrongPath,
 } from "./errors/errors.mjs";
 import * as R from "ramda";
 import {listDescriptors} from "./listDescriptors/listDescriptors.mjs";
+import {stat, symlink} from "./commands.mjs";
 
 export const fS = {
     openDirectoryNow: null,
@@ -53,11 +54,18 @@ export const fS = {
             .catch(() => null)
     },
 
+    readObjOnBlocks(arr) {
+        return device.readBlocks(arr).then(buffersListToInfo).catch(console.log)
+    },
 
-    initializeRootDirectory() {
+    async initializeRootDirectory() {
         this.openDirectoryNow = LINK_ROOT_DIRECTORY
         const root = new Descriptor(DIRECTORY, 0, 1)
-        return listDescriptors.setByIndex(LINK_ROOT_DIRECTORY, root)
+        await root.writeContent({
+            '.': LINK_ROOT_DIRECTORY,
+            '..': LINK_ROOT_DIRECTORY
+        })
+        return await listDescriptors.setByIndex(LINK_ROOT_DIRECTORY, root)
     },
 
     async initializeFS(n) {
@@ -67,28 +75,58 @@ export const fS = {
         await this.initializeRootDirectory()
     },
 
-    readObjOnBlocks(arr) {
-        return device.readBlocks(arr).then(buffersListToInfo).catch(console.log)
-    },
-
     async createFile(path, newDescriptor, content) {
         const fatherDescriptorIndex = await this._stat(path.slice(0, -1))
         await newDescriptor.writeContent(content)
         const indexNewDesc = await listDescriptors.addDescriptor(newDescriptor)
         await this._link(indexNewDesc, fatherDescriptorIndex, path)
-        return null
+        return indexNewDesc
     },
 
-    async searchFileDescriptor(startDescriptorIndex, path) {
-        if (path.length === 0) {
+    async searchFileDescriptor(startDescriptorIndex, path, numSwitch=0, oldIndex=null) {
+        if (numSwitch > MAX_SWITCHOVER) return errorMaxSwitchover
+        const descriptor = await listDescriptors.getDescriptor(startDescriptorIndex)
+        if (path.length === 0 && descriptor.fileType !== SYMLINK) {
             return startDescriptorIndex
         }
-        const content = await listDescriptors.getDescriptor(startDescriptorIndex).readContent() || {}
-        const nextDescriptorIndex = content[R.head(path)]
-        if (nextDescriptorIndex !== undefined) {
-            return await this.searchFileDescriptor( nextDescriptorIndex, R.tail(path))
-        } else {
-            return errorWrongPath
+
+        const content = await descriptor.readContent()
+        if (!content) return errorWrongPath
+
+        if (descriptor.fileType === DIRECTORY) {
+            const nextDescriptorIndex = content[R.head(path)]
+            if (!nextDescriptorIndex) return errorWrongPath
+            return await this.searchFileDescriptor(
+                nextDescriptorIndex,
+                R.tail(path),
+                numSwitch + 1,
+                oldIndex = startDescriptorIndex
+            )
+        }
+
+        if (descriptor.fileType === SYMLINK) {
+            const symlinkPath = toPath(content.str)
+            const newPath = [...symlinkPath, ...R.tail(path)]
+            if (content.str[0] === '/') {
+                return await this.searchFileDescriptor(
+                    LINK_ROOT_DIRECTORY,
+                    newPath,
+                    numSwitch + 1,
+                    startDescriptorIndex
+                )
+            }
+            else {
+                return await this.searchFileDescriptor(
+                    oldIndex,
+                    newPath,
+                    numSwitch + 1,
+                    startDescriptorIndex
+                )
+            }
+        }
+
+        if (descriptor.fileType === REGULAR) {
+            return errorOnFile
         }
     },
 
@@ -99,21 +137,30 @@ export const fS = {
         else if (path[0] === ROOT_DIRECTORY_NAME) {
             return this.searchFileDescriptor(LINK_ROOT_DIRECTORY, R.tail(path))
         }
+        else if (path[0] === '..') {
+            return this.searchFileDescriptor(this.openDirectoryNow, path)
+        }
         return 0
     },
 
     stat(pathname) {
         const path = toPath(pathname)
-
         return this._stat(path)
             .then(i => toVueDs(listDescriptors.getDescriptor(i)))
             .then(i => i || errorNotFound)
     },
 
-    mkdir(pathname) {
+
+    async mkdir(pathname) {
         const path = toPath(pathname)
+        const err = isNotValidFileName(path[path.length -1])
+        if (err) return err
         const descriptor = new Descriptor(DIRECTORY)
-        return this.createFile(path, descriptor)
+        const index = await this.createFile(path, descriptor)
+        await descriptor.writeContent({
+            '.': index,
+            '..': await this._stat(path.slice(0, -1))
+        })
     },
 
     isDirectory(pathname) {
@@ -128,7 +175,8 @@ export const fS = {
         const path = toPath(pathname)
         const isEmptyDirectory = await this._stat(path)
             .then(index => listDescriptors.getDescriptor(index))
-            .then(el => el.fileType === DIRECTORY && el.fileSize === 0)
+            .then(async el => el.fileType === DIRECTORY &&
+                Object.keys(await el.readContent()).length < 3)
 
         if(!isEmptyDirectory) return errorDirectoryNotEmpty
 
@@ -141,6 +189,8 @@ export const fS = {
 
     create(pathname) {
         const path = toPath(pathname)
+        const err = isNotValidFileName(path[path.length -1])
+        if (err) return err
         const descriptor = new Descriptor(REGULAR)
         return this.createFile(path, descriptor, null)
     },
@@ -266,5 +316,14 @@ export const fS = {
             descriptor.add(await fS.writeEmptyToFreeBlocks(newBl))
             return listDescriptors.updateDescriptor(index, descriptor)
         }
+    },
+
+    async symlink(str, pathname) {
+        const path = toPath(pathname)
+        const err = isNotValidFileName(path[path.length -1])
+        if (err) return err
+        const descriptor = new Descriptor(SYMLINK)
+        const index = await this.createFile(path, descriptor)
+        await descriptor.writeContent({str: str})
     }
 }

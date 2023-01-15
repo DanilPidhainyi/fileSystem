@@ -21,6 +21,7 @@ export class Descriptor {
         }
     }
 
+
     async readSize(offSet, size) {
         const content = this.fileSize === 0 ? '' : await fS.readObjOnBlocks(this.link.get())
         return content.slice(offSet, offSet + size)
@@ -53,7 +54,7 @@ export class Descriptor {
 
     async writeContent(content) {
         if (content !== null && content !== undefined) {
-            await fS.writeInfoToFreeBlocks(content).then(writeBl => {
+            await fS.writeInfoToOldBlocks(content, this.link.get()).then(writeBl => {
                 this.link.set(writeBl)
                 this.fileSize = writeBl.length * BLOCK_SIZE
             })
