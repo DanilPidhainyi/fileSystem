@@ -1,7 +1,6 @@
 import {
     buffersListToInfo,
-    infoToBuffersList, isNotValidFileName, log,
-    printErr,
+    infoToBuffersList, isNotValidFileName,
     toPath,
     toVueDs, toVueLs
 } from "./static/helpers.mjs";
@@ -10,36 +9,28 @@ import {bitMap} from "./bitMap/bitMap.mjs";
 import {
     BLOCK_SIZE,
     DIRECTORY,
-    LINK_ROOT_DIRECTORY, MAX_SWITCHOVER, REGULAR,
+    LINK_ROOT_DIRECTORY, REGULAR,
     ROOT_DIRECTORY_NAME, SYMLINK
 } from "./static/constants.mjs";
 import {Descriptor} from "./classes/Descriptor.mjs";
 import {
     errorDirectoryNotEmpty,
     errorFileNameIsDuplicated,
-    errorFileNotOpen, errorMaxSwitchover,
-    errorNotFound, errorOnFile,
+    errorFileNotOpen, errorMaxSizeDevice, errorMaxSwitchover,
+    errorNotFound,
     errorWrongPath,
 } from "./errors/errors.mjs";
 import * as R from "ramda";
 import {listDescriptors} from "./listDescriptors/listDescriptors.mjs";
-import {stat, symlink} from "./commands.mjs";
+import {searchFileDescriptor} from "./static/searchFileDescriptor.mjs";
 
 export const fS = {
     openDirectoryNow: null,
     openFilesNow: {}, // index Open File: {}
 
-    writeInfoToFreeBlocks(info) {
-        const bufferList = infoToBuffersList(info)
-        const freeBlocks = bitMap.getFreeBlocks().slice(0, bufferList.length)
-        return device.writeBufferList(bufferList, freeBlocks)
-            .then(() => bitMap.setBusy(freeBlocks))
-            .then(() => freeBlocks)
-            .catch(() => null)
-    },
-
     async writeEmptyToFreeBlocks(numBlocks) {
         const free = bitMap.getFreeBlocks().slice(0, numBlocks)
+        if (numBlocks > free.length) return errorMaxSizeDevice
         await device.clearBlocks(free)
         await bitMap.setBusy(free)
         return free
@@ -48,6 +39,7 @@ export const fS = {
     writeInfoToOldBlocks(info, arrBlocks) {
         const bufferList = infoToBuffersList(info)
         const freeBlocks = arrBlocks.concat(bitMap.getFreeBlocks()).slice(0, bufferList.length)
+        if (bufferList.length > freeBlocks.length) return errorMaxSizeDevice
         return device.writeBufferList(bufferList, freeBlocks)
             .then(() => bitMap.setBusy(freeBlocks))
             .then(() => freeBlocks)
@@ -65,7 +57,7 @@ export const fS = {
             '.': LINK_ROOT_DIRECTORY,
             '..': LINK_ROOT_DIRECTORY
         })
-        return await listDescriptors.setByIndex(LINK_ROOT_DIRECTORY, root)
+        return listDescriptors.setByIndex(LINK_ROOT_DIRECTORY, root)
     },
 
     async initializeFS(n) {
@@ -83,62 +75,16 @@ export const fS = {
         return indexNewDesc
     },
 
-    async searchFileDescriptor(startDescriptorIndex, path, numSwitch=0, oldIndex=null) {
-        if (numSwitch > MAX_SWITCHOVER) return errorMaxSwitchover
-        const descriptor = await listDescriptors.getDescriptor(startDescriptorIndex)
-        if (path.length === 0 && descriptor.fileType !== SYMLINK) {
-            return startDescriptorIndex
-        }
-
-        const content = await descriptor.readContent()
-        if (!content) return errorWrongPath
-
-        if (descriptor.fileType === DIRECTORY) {
-            const nextDescriptorIndex = content[R.head(path)]
-            if (!nextDescriptorIndex) return errorWrongPath
-            return await this.searchFileDescriptor(
-                nextDescriptorIndex,
-                R.tail(path),
-                numSwitch + 1,
-                oldIndex = startDescriptorIndex
-            )
-        }
-
-        if (descriptor.fileType === SYMLINK) {
-            const symlinkPath = toPath(content.str)
-            const newPath = [...symlinkPath, ...R.tail(path)]
-            if (content.str[0] === '/') {
-                return await this.searchFileDescriptor(
-                    LINK_ROOT_DIRECTORY,
-                    newPath,
-                    numSwitch + 1,
-                    startDescriptorIndex
-                )
-            }
-            else {
-                return await this.searchFileDescriptor(
-                    oldIndex,
-                    newPath,
-                    numSwitch + 1,
-                    startDescriptorIndex
-                )
-            }
-        }
-
-        if (descriptor.fileType === REGULAR) {
-            return errorOnFile
-        }
-    },
 
     _stat(path) {
         if (path[0] === '.') {
-            return this.searchFileDescriptor(this.openDirectoryNow, R.tail(path))
+            return searchFileDescriptor(this.openDirectoryNow, R.tail(path))
         }
         else if (path[0] === ROOT_DIRECTORY_NAME) {
-            return this.searchFileDescriptor(LINK_ROOT_DIRECTORY, R.tail(path))
+            return searchFileDescriptor(LINK_ROOT_DIRECTORY, R.tail(path))
         }
         else if (path[0] === '..') {
-            return this.searchFileDescriptor(this.openDirectoryNow, path)
+            return searchFileDescriptor(this.openDirectoryNow, path)
         }
         return 0
     },
@@ -272,7 +218,6 @@ export const fS = {
         if (!fatherDescriptor || !childDescriptor) return errorWrongPath
 
         let fatherContent = await fatherDescriptor.readContent()
-
 
         delete fatherContent[pathChild[pathChild.length -1]]
 

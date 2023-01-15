@@ -4,6 +4,7 @@ import * as R from 'ramda'
 import {splitArr} from "../static/helpers.mjs";
 import {device} from "../device/device.mjs";
 import {fS} from "../fS.mjs";
+import {errorMaxSizeDevice} from "../errors/errors.mjs";
 
 export const bitMap = {
 

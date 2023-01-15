@@ -1,5 +1,6 @@
 export const errorWrongPath = 'Помилковий шлях до файлу'
 export const errorMaxSwitchover = 'Занадто багато переходів при пошуку файлу'
+export const errorMaxSizeDevice = 'Носій інформації переповнений'
 export const errorOnFile = 'Посилання вказує на звичайний файл'
 export const errorWrongDescriptionNumber = 'Неправильна кількість дескрипторів'
 export const errorWrongNotDescription = 'Дескриптор не існує'
