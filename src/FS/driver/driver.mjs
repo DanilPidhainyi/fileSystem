@@ -3,7 +3,7 @@ import {BLOCK_SIZE, NAME_CARRIER_INFORMATION, SIZE_CARRIER_INFORMATION} from "..
 import {catchErrs, logErr} from "../static/helpers.mjs";
 
 
-export const device = {
+export const driver = {
 
     initializationBlockDevice() {
         this.device = new BlockDevice({

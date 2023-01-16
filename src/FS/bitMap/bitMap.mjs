@@ -2,7 +2,7 @@ import {ALL_BLOCKS, BLOCK_SIZE} from "../static/constants.mjs";
 import BitSet from "bitset";
 import * as R from 'ramda'
 import {splitArr} from "../static/helpers.mjs";
-import {device} from "../device/device.mjs";
+import {driver} from "../driver/driver.mjs";
 import {fS} from "../fS.mjs";
 import {errorMaxSizeDevice} from "../errors/errors.mjs";
 
@@ -45,8 +45,7 @@ export const bitMap = {
     },
 
     read() {
-        // todo
-        return this.parseArray(device.readBlocks(this.linksOnBitMap))
+        return this.parseArray(driver.readBlocks(this.linksOnBitMap))
     },
 
     parseArray(arr) {

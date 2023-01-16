@@ -1,4 +1,4 @@
-import {device} from "../device/device.mjs";
+import {driver} from "../driver/driver.mjs";
 
 export class BlockWithLinks {
 
@@ -10,12 +10,11 @@ export class BlockWithLinks {
     writeData() {
         const index = this.index
         const data = JSON.stringify(this.data)
-        // todo data > block size => err
-        return device.writeBlocMap({[index]: data})
+        return driver.writeBlocMap({[index]: data})
     }
 
     async readData() {
-        this.data = JSON.parse(await device.readBlocks([this.index]))
+        this.data = JSON.parse(await driver.readBlocks([this.index]))
     }
 
 

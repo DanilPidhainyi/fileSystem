@@ -4,7 +4,7 @@ import {
     toPath,
     toVueDs, toVueLs
 } from "./static/helpers.mjs";
-import {device} from "./device/device.mjs";
+import {driver} from "./driver/driver.mjs";
 import {bitMap} from "./bitMap/bitMap.mjs";
 import {
     BLOCK_SIZE,
@@ -31,7 +31,7 @@ export const fS = {
     async writeEmptyToFreeBlocks(numBlocks) {
         const free = bitMap.getFreeBlocks().slice(0, numBlocks)
         if (numBlocks > free.length) return errorMaxSizeDevice
-        await device.clearBlocks(free)
+        await driver.clearBlocks(free)
         await bitMap.setBusy(free)
         return free
     },
@@ -40,14 +40,14 @@ export const fS = {
         const bufferList = infoToBuffersList(info)
         const freeBlocks = arrBlocks.concat(bitMap.getFreeBlocks()).slice(0, bufferList.length)
         if (bufferList.length > freeBlocks.length) return errorMaxSizeDevice
-        return device.writeBufferList(bufferList, freeBlocks)
+        return driver.writeBufferList(bufferList, freeBlocks)
             .then(() => bitMap.setBusy(freeBlocks))
             .then(() => freeBlocks)
             .catch(() => null)
     },
 
     readObjOnBlocks(arr) {
-        return device.readBlocks(arr).then(buffersListToInfo).catch(console.log)
+        return driver.readBlocks(arr).then(buffersListToInfo).catch(console.log)
     },
 
     async initializeRootDirectory() {
@@ -61,7 +61,7 @@ export const fS = {
     },
 
     async initializeFS(n) {
-        await device.initializationBlockDevice(n)
+        await driver.initializationBlockDevice(n)
         await bitMap.initializeBitMap()
         await listDescriptors.initializeListDescriptors(n)
         await this.initializeRootDirectory()
