@@ -16,8 +16,8 @@ import {Descriptor} from "./classes/Descriptor.mjs";
 import {
     errorDirectoryNotEmpty,
     errorFileNameIsDuplicated,
-    errorFileNotOpen, errorMaxSizeDevice, errorMaxSwitchover,
-    errorNotFound,
+    errorFileNotOpen, errorMaxSizeDevice, errorMaxSwitchover, errorNotDirInFile,
+    errorNotFound, errorOnFile,
     errorWrongPath,
 } from "./errors/errors.mjs";
 import * as R from "ramda";
@@ -69,8 +69,9 @@ export const fS = {
 
     async createFile(path, newDescriptor, content) {
         const fatherDescriptorIndex = await this._stat(path.slice(0, -1))
+        if (typeof fatherDescriptorIndex !== "number") return fatherDescriptorIndex
         await newDescriptor.writeContent(content)
-        const indexNewDesc = await listDescriptors.addDescriptor(newDescriptor)
+        const indexNewDesc = + await listDescriptors.addDescriptor(newDescriptor)
         await this._link(indexNewDesc, fatherDescriptorIndex, path)
         return indexNewDesc
     },
@@ -101,8 +102,10 @@ export const fS = {
         const path = toPath(pathname)
         const err = isNotValidFileName(path[path.length -1])
         if (err) return err
+        if (!await this.isDirectory(path.slice(0, -1).join('/'))) return errorNotDirInFile
         const descriptor = new Descriptor(DIRECTORY)
         const index = await this.createFile(path, descriptor)
+        if (typeof index !== "number") return index
         await descriptor.writeContent({
             '.': index,
             '..': await this._stat(path.slice(0, -1))
@@ -113,12 +116,13 @@ export const fS = {
         const path = toPath(pathname)
         return this._stat(path)
             .then(index => listDescriptors.getDescriptor(index))
-            .then(el => el.fileType === DIRECTORY)
+            .then(el => el && el.fileType === DIRECTORY)
     },
 
 
     async rmdir(pathname) {
         const path = toPath(pathname)
+        if (!await this.isDirectory(pathname)) return errorWrongPath
         const isEmptyDirectory = await this._stat(path)
             .then(index => listDescriptors.getDescriptor(index))
             .then(async el => el.fileType === DIRECTORY &&
@@ -133,12 +137,13 @@ export const fS = {
         return listDescriptors.getDescriptor(this.openDirectoryNow).readContent().then(toVueLs)
     },
 
-    create(pathname) {
+    async create(pathname) {
         const path = toPath(pathname)
         const err = isNotValidFileName(path[path.length -1])
         if (err) return err
         const descriptor = new Descriptor(REGULAR)
-        return this.createFile(path, descriptor, null)
+        const index = await this.createFile(path, descriptor, null)
+        if (typeof index === "string") return index
     },
 
     async fd(open_pathname) {
@@ -237,12 +242,11 @@ export const fS = {
             return null
         }
         const path = toPath(pathname)
-        const newPath = await this._stat(path)
-        if (Number.isInteger(+newPath)){
-            this.openDirectoryNow = newPath
-        } else {
-            return newPath
-        }
+        const index = await this._stat(path)
+        if (!Number.isInteger(+index)) return index
+        const descriptor = await listDescriptors.getDescriptor(index)
+        if (descriptor && (descriptor.fileType !== DIRECTORY)) return errorOnFile
+        this.openDirectoryNow = index
     },
 
     async truncate(pathname, size) {

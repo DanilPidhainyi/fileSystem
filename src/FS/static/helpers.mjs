@@ -1,5 +1,5 @@
 import {BLOCK_SIZE, MAX_NAME_SIZE} from "./constants.mjs";
-import {errorDirectoryNotEmpty, errorLongName, errorSymbol} from "../errors/errors.mjs";
+import {errorDirectoryNotEmpty, errorLongName, errorSymbol, errorWrongPathname} from "../errors/errors.mjs";
 
 export const log = ell => {
     console.log('log=', ell)
@@ -112,6 +112,7 @@ export const printErr = async (command, err) => {
 }
 
 export const isNotValidFileName = name => {
-    if (name.length > MAX_NAME_SIZE) return errorLongName
+    if (!name) return errorWrongPathname
+    if ( name.length > MAX_NAME_SIZE) return errorLongName
     if (/[^\w \d]+/i.test(name)) return errorSymbol
 }
