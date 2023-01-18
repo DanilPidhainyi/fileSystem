@@ -7,9 +7,11 @@ import {BLOCK_SIZE} from "../../FS/static/constants.mjs";
         await mkfs(128)
         await create('./new File')
         await stat('./new File')
-        await truncate('./new File', BLOCK_SIZE + 1)
+        await truncate('./new File', BLOCK_SIZE * 2 + 1)
         await stat('./new File')
         await truncate('./new File', BLOCK_SIZE)
         await stat('./new File')
     }
 )()
+
+

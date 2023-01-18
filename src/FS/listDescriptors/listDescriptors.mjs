@@ -38,7 +38,6 @@ export const listDescriptors = {
 
     async addDescriptor(descriptor) {
         const free = Object.keys(this.descriptors).find(el => !this.descriptors[el].fileType)
-        // todo err not free
         await this.setByIndex(free, descriptor)
         return free
     },

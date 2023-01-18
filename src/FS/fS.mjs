@@ -9,7 +9,7 @@ import {bitMap} from "./bitMap/bitMap.mjs";
 import {
     BLOCK_SIZE,
     DIRECTORY,
-    LINK_ROOT_DIRECTORY, REGULAR,
+    LINK_ROOT_DIRECTORY, MAX_FILE_SIZE, REGULAR,
     ROOT_DIRECTORY_NAME, SYMLINK
 } from "./static/constants.mjs";
 import {Descriptor} from "./classes/Descriptor.mjs";
@@ -17,8 +17,8 @@ import {
     errorDirectoryNotEmpty,
     errorFileNameIsDuplicated,
     errorFileNotOpen, errorMaxSizeDevice, errorMaxSwitchover, errorNotDirInFile,
-    errorNotFound, errorOnFile,
-    errorWrongPath,
+    errorNotFound, errorOnFile, errorToNumberDes,
+    errorWrongPath, errorТoDiskSpace,
 } from "./errors/errors.mjs";
 import * as R from "ramda";
 import {listDescriptors} from "./listDescriptors/listDescriptors.mjs";
@@ -72,6 +72,7 @@ export const fS = {
         if (typeof fatherDescriptorIndex !== "number") return fatherDescriptorIndex
         await newDescriptor.writeContent(content)
         const indexNewDesc = + await listDescriptors.addDescriptor(newDescriptor)
+        if (isNaN(indexNewDesc)) return errorToNumberDes
         await this._link(indexNewDesc, fatherDescriptorIndex, path)
         return indexNewDesc
     },
@@ -180,6 +181,7 @@ export const fS = {
 
     async write(fd, size) {
         if (!this.openFilesNow[fd]) return errorFileNotOpen
+        if (this.openFilesNow[fd].offset + size > MAX_FILE_SIZE) return errorТoDiskSpace
         await listDescriptors
             .getDescriptor(this.openFilesNow[fd].link)
             .writeSize(this.openFilesNow[fd].offset, size)

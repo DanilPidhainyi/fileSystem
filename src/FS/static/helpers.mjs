@@ -111,6 +111,16 @@ export const printErr = async (command, err) => {
     }
 }
 
+export const printFd = async (command, data) => {
+    const dataAW = await data
+    if (typeof dataAW === 'number') {
+        printCommand(command, '', )
+        return dataAW
+    } else {
+        printCommand(command, dataAW, true)
+    }
+}
+
 export const isNotValidFileName = name => {
     if (!name) return errorWrongPathname
     if ( name.length > MAX_NAME_SIZE) return errorLongName

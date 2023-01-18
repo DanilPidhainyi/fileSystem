@@ -1,4 +1,5 @@
-import {cd, create, link, ls, mkdir, mkfs, stat, unlink} from "../../FS/commands.mjs";
+import {cd, create, link, ls, mkdir, mkfs, stat, unlink}
+        from "../../FS/commands.mjs";
 
 (
     async () => {
@@ -17,3 +18,15 @@ import {cd, create, link, ls, mkdir, mkfs, stat, unlink} from "../../FS/commands
         await ls()
     }
 )()
+
+
+
+
+
+
+
+
+
+
+
+

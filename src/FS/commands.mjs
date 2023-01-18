@@ -1,7 +1,7 @@
 import {clearFile, createFileForDevice} from "./static/working_with_a_file.mjs";
 import {fS} from "./fS.mjs";
 import {isWrongPathname} from "./errors/tests.mjs";
-import {print, printErr} from "./static/helpers.mjs";
+import {print, printErr, printFd} from "./static/helpers.mjs";
 import {errorItsDirectory} from "./errors/errors.mjs";
 
 
@@ -56,7 +56,7 @@ export const fd = open_pathname => {
      * */
 
     const res = isWrongPathname(open_pathname) || fS.fd(open_pathname)
-    return printErr(`fd ${open_pathname} `, res)
+    return printFd(`fd ${open_pathname} `, res)
 }
 
 export const close = fd => {
@@ -99,17 +99,19 @@ export const link = async (pathname1, pathname2) => {
      * створити жорстке посилання, вказане в pathname2, на файл,
      * на який вказує шляхове ім’я pathname1
      * */
-    if (await fS.isDirectory(pathname1)) return errorItsDirectory
-    return printErr(`link ${pathname1}, ${pathname2} `, fS.link(pathname1, pathname2))
+    const command = `link ${pathname1}, ${pathname2} `
+    if (await fS.isDirectory(pathname1)) return printErr(command, errorItsDirectory)
+    return printErr(command, fS.link(pathname1, pathname2))
 }
 
 export const unlink = async pathname => {
     /**
      * знищити жорстке посилання на файл, вказане в pathname
      * */
-    if (await fS.isDirectory(pathname)) return errorItsDirectory
+    const command = `unlink ${pathname}`
+    if (await fS.isDirectory(pathname)) return printErr(command, errorItsDirectory)
     const res = isWrongPathname(pathname) || fS.unlink(pathname)
-    return printErr(`unlink ${pathname}`, res)
+    return printErr(command, res)
 }
 
 export const truncate = async (pathname, size) => {
